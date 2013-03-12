@@ -9,6 +9,7 @@
 import time
 from rvbd.common import timeutils
 from rvbd.shark import _interfaces
+from rvbd.shark._class_mapping import path_to_class
 import json
 
 def _to_native(string, legend_entry):
@@ -51,17 +52,22 @@ def _to_native(string, legend_entry):
     return string
 
 class View4(_interfaces.View):
-    def __init__(self, shark, handle, config=None):
+    def __init__(self, shark, handle, config=None, source=None):
         super(View4, self).__init__()
         
         self.shark = shark
         self.handle = handle
+        self.source = source
         self._outputs = {}
 
         if config is None:
             self.config = shark.api.view.get_config(handle)
         else:
             self.config = config
+
+        if source is None:
+            path = self.config['input_source']['path']
+            self.source = path_to_class(shark, path)
 
     def __repr__(self):
         d = {}
@@ -81,7 +87,7 @@ class View4(_interfaces.View):
         template_json['input_source']['path'] = source.source_path
         res = shark.api.view.add(template_json)
         handle = res.get('id')
-        view = cls(shark, handle, template_json)
+        view = cls(shark, handle, template_json, source)
         if not source.is_live() and sync:
             try:
                 view._poll_completion()
@@ -125,7 +131,7 @@ class View4(_interfaces.View):
 
         handle = res.get('id')
 
-        view = cls(shark, handle, template)
+        view = cls(shark, handle, template, source)
         return cls._process_view(view, source, sync)
 
     @staticmethod
@@ -177,7 +183,6 @@ class View4(_interfaces.View):
             for output in processor['outputs']:
                 self._outputs[output['id']] = Output4(self, output['id'])
 
-        self.ti = self.get_timeinfo()
 
     def close(self):
         """Close this view on the server (which permanently deletes
@@ -240,26 +245,28 @@ class Output4(_interfaces.Output):
     def _parse_output_params(self, start=None, end=None, delta=None,
                              aggregated=False, sortby=None,
                              sorttype="descending", fromentry=0, toentry=0):
-        if start == None:
-            start = self.view.ti.start
-
-        if end == None:
-            end = self.view.ti.end
-
-        if aggregated and delta is not None:
-            raise RuntimeError('cannot specify both delta and aggregated')
 
         if aggregated:
-            # XXXCJ - adding delta is required because end is the *beginning*
-            # of the last sample interval, not the end...
-            delta = end - start + self.view.ti.delta
-        elif delta == None:
-            delta = self.view.ti.delta
+            if not start or not end or not delta:
+                ti = self.view.get_timeinfo()
+
+            start = (start or ti.start)
+            end = start
+            delta = (end or ti.end) - start + (delta or ti.delta)    
+
+        if start is None:
+            start = 0
+            
+        if end is None:
+            end = 0
 
         if hasattr(delta, 'seconds'):
             # looks like a timedelta
             # total_seconds() would be nice but was added in python 2.7
             delta = ((delta.days * 24 * 3600) + delta.seconds) * 10**9
+
+        if delta is None:
+            delta = 1000000000
 
         params = {
             'start': start,
@@ -268,7 +275,7 @@ class Output4(_interfaces.Output):
             }
 
         if aggregated:
-            params['aggregated'] = None
+            params['aggregated'] = True
 
         if sortby:
             params.update({

@@ -12,6 +12,7 @@ from rvbd.shark.types import Operation, Value, Key
 from rvbd.shark.filters import SharkFilter, TimeFilter
 from rvbd.common.service import UserAuth
 from rvbd.common.exceptions import *
+from rvbd.shark import viewutils
 
 import os
 import sys
@@ -243,6 +244,21 @@ class SharkTests(unittest.TestCase):
             if len(rows) == 0:
                 logger.warn('no data in view, cannot test aggregated get')
             self.assertTrue(len(rows) == 0 or len(rows) == 1)
+
+        #test on live interface
+        s = self.shark
+	interface = s.get_interface_by_name('mon0')
+	view = s.create_view(interface, columns, None)
+        #give some time to the interface to collect packets
+        time.sleep(5)
+	data = view.get_data()
+        self.assertTrue(len(data) >= 1)
+
+	data = view.get_data(aggregated=True)
+        self.assertTrue(len(data) <= 1)
+
+        view.close()
+
 
     def test_create_view_from_template(self):
         job = setup_capture_job(self.shark)
@@ -535,6 +551,20 @@ class SharkTests(unittest.TestCase):
         pe.enable()
         pe.disable()
         pe.remove_profiler('tm08-1.lab.nbttech.com')
+        
+    def test_live_view(self):
+        shark = self.shark
+        job = setup_capture_job(self.shark)
+        clip = create_trace_clip(self.shark, job)
+        interface = shark.get_interfaces()[0]
+        columns, filters = setup_defaults()
+        with shark.create_view(clip, columns, None) as v:
+            cursor = viewutils.Cursor(v.all_outputs()[0])
+            data = cursor.get_data()
+            time.sleep(3)
+            data2 = cursor.get_data()
+            self.assertFalse(data == data2)
+
         
 if __name__ == '__main__':
     # for standalone use take one command-line argument: the shark host

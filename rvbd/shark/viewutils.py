@@ -234,3 +234,26 @@ def write_csv(filename, legend, stream, include_column_names=True, include_sampl
             writer.writerow(sample)
 
     ofile.close()
+
+
+class Cursor(object):
+    """Given a live view returns only new samples for each get_data call
+    """
+    def __init__(self, output):
+        self.output = output
+        self._last_end = 0
+
+    def get_data(self):
+
+        source = self.output.view.source
+        view = self.output.view
+
+        ti = view.get_timeinfo()
+        
+        start = self._last_end
+    
+        data = self.output.get_data(start=start, end=ti.end)
+        
+        self._last_end = ti.end
+        
+        return data
