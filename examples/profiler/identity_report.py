@@ -98,6 +98,11 @@ class IdentityApp(ProfilerApp):
                          help='Run summary reports for hosts during found '
                               'login times.')
 
+        group.add_option('--csv', dest='csv', default=False, action='store_true',
+                         help='Print results in CSV table.')
+        group.add_option('--tsv', dest='tsv', default=False, action='store_true',
+                         help='Print results in TSV (tab-separated-values) table.')
+
         group.add_option('--testfile', dest='testfile', default=None,
                          help='Optional test file with identity events to use in place of '
                               'actual profiler queries.')
@@ -340,7 +345,13 @@ class IdentityApp(ProfilerApp):
             tbl_data = [(x[0], format_time(x[1]), format_time(x[2]), x[3]) 
                                                                 for x in activity]
 
-        Formatter.print_table(tbl_data, headers)
+        if self.options.csv:
+            Formatter.print_csv(tbl_data, headers)
+        elif self.options.tsv:
+            Formatter.print_csv(tbl_data, headers, delim='\t')
+        else:
+            Formatter.print_table(tbl_data, headers)
+
 
 IdentityApp().run()
 
