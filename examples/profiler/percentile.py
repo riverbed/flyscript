@@ -110,8 +110,8 @@ def generatePercentile(columns, theTimeFilter, trafficFilter, centricity, dataRe
     if graph == True:
         genGraph(data, dataList, percentileVal)
 
-    print '{}% Average Bytes is {}'.format(percentileVal, stats.scoreatpercentile(data, percentileVal)[0])
-    if clean == False: print '{}% Average Bytes is {}'.format(percentileVal, stats.scoreatpercentile(dataList[1], percentileVal)[0])
+    #print '{}% Average Bytes is {}'.format(percentileVal, stats.scoreatpercentile(data, percentileVal)[0])
+    if clean == False: print '{}% Average Bytes is {}'.format(percentileVal, stats.scoreatpercentile(dataList, percentileVal)[0])
     if Max == True and clean == False: print 'Maximum Average Bytes is {}'.format(max(data)[0])
     if Min == True and clean == False: print 'Minimum Average Bytes is {}'.format(min(data)[0])
     if Median == True and clean == False: print 'Median Average Bytes is {}'.format(stats.scoreatpercentile(data, 50)[0])
@@ -258,7 +258,8 @@ if graph == True:
         graphFilename = app.options.graphFilename
     except:
         print "You must specify a filename if you request a graph"
-        exit()
+        exit(1)
+
 individual = app.options.individual
 overall = app.options.overall
 clean = app.options.clean
@@ -282,17 +283,27 @@ sumTime = app.options.sumTime
 
 if not is_int(percentileVal) or percentileVal < 1 or percentileVal > 100:
     print "Percentile MUST be an integer between 1 and 100"
+    exit(1)
 
 # Validate the time filter
 theTimeFilter=TimeFilter.parse_range(timeFilter)
 
+def checkSet(value, label):
+    if value is None:
+        print "'%s' must be passed for this command" % label
+        exit(1)
+        
 # Process every index on the system
 if listInterfaceGroups == True or listHostGroupTypes == True or trafficExpressionHelp:
     # List the interface or host groups
     if listHostGroupTypes == True:
+        checkSet(sshUsername, "sshUsername")
+        checkSet(sshPassword, "sshPassword")
         listGroupTypes(host, sshUsername, sshPassword)
         exit()
     elif listInterfaceGroups == True:
+        checkSet(sshUsername, "sshUsername")
+        checkSet(sshPassword, "sshPassword")
         listIfaceGroups(host, sshUsername, sshPassword)
         exit()
     elif trafficExpressionHelp == True:
@@ -332,7 +343,7 @@ if allIndexes == True:
 
         # Create a new report based on the list of interfaces we received
         report = TrafficOverallTimeSeriesReport(profiler)
-        report.run( columns = [profiler.columns.key.avg_bytes],
+        report.run( columns = [profiler.columns.value.avg_bytes],
                     timefilter = theTimeFilter,
                     trafficexpr = intExpr,
                     centricity = "int",
@@ -393,7 +404,7 @@ else:
         groupby = profiler.groupbys.interface
         centricity = "int"
 
-    columns = [profiler.columns.key.avg_bytes]
+    columns = [profiler.columns.value.avg_bytes]
 
     if expType[0] == "hostgroup" and not re.match('.+:.+', expType[1]):
         # Only the group type is specified so we need to get the list of hostgroups by SSH'ing to the host
