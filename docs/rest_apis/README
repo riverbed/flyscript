@@ -1,0 +1,38 @@
+REST API documentation
+======================
+
+This directory contains the sources for generating FlyScript REST API documentation
+based on the jsondoc format.  
+
+generate
+========
+
+This tool will read a jsondoc input file and generate HTML, printable HTML, and PDF.  
+
+Dependencies:
+ * jsondoc - python package (see below)
+ * markdown - standard Python package (via easy_install)
+ * wkhtmltopdf
+
+jsondoc
+=======
+
+The 'jsondoc' package is available via source:
+
+$ cd <somedir>
+$ git clone git@git.lab.nbttech.com:jsondoc
+
+Add the path <somedir> to your PYTHONPATH environment variable.
+
+$ export PYTHONPATH="<somedir>/jsondoc"
+
+wkhtmltopdf
+===========
+
+This tools converts an HTML page to PDF.  Download the appropriate and install
+the appropriate package for your platform:
+
+http://code.google.com/p/wkhtmltopdf/
+
+Then, either set then environment variable WKHTMLTOPDF to point to the
+executable, or pass it as a command line switch to generate via the -w <binary>

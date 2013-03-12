@@ -1,0 +1,57 @@
+
+# set up some directives for where stuff goes
+tempdir tmp
+outdir ../html
+
+header header.html
+static-file flyscript.css
+
+header header.md
+footer footer.md
+
+version ../../RELEASE-VERSION
+title "FlyScript Documentation"
+
+markdown_extension extra
+markdown_extension codehilite
+markdown_extension toc title="On this page:"
+
+# declare our source files
+file index.md background.md glossary.md install.md install_details.md
+file tutorials.md tutorial_shark.md tutorial_profiler.md
+file hacking.md shark.md profiler.md extras.md 
+file common.md service.md conn.md timeutils.md
+file profiler_columns.md rest_apis.md
+static-file rb-logo.png
+static-file tutorial-1.pcap
+
+# only complain about undocumented stuff in the rvbd.* namespace
+module-prefix rvbd
+
+# classes
+autolink rvbd.shark.Shark shark.html#sharkobjects
+autolink "packet source object(s?)" shark.html#sourceobjects
+autolink "capture job object(s)" shark.html#capturejobobjects
+autolink "trace clip object(s)" shark.html#traceclips
+autolink "(rvbd\.common\.)?UserAuth" common.html#userauth
+autolink "(rvbd\.common\.)?OAuth" common.html#oauth
+
+# glossary terms
+autolink "\bview(s?)\b" glossary.html#view
+autolink "packet source(s?)" glossary.html#packetsource
+autolink "extractor field(s?)" glossary.html#extractor
+autolink "capture job(s?)" glossary.html#capturejob
+autolink "trace clip(s?)" glossary.html#traceclip
+
+
+undocumented rvbd.shark.test
+undocumented rvbd.profiler.test
+
+# XXX kill or move this?
+undocumented rvbd.common.testrunner
+
+# these should go away or get leading undesrcores?
+undocumented rvbd.shark._source4.Clip4.is_live
+undocumented rvbd.shark._source4.Clip4.source_path rvbd.shark._source4.Clip4.source_options
+undocumented rvbd.shark._source4.Job4.is_live
+undocumented rvbd.shark._source4.Job4.source_path rvbd.shark._source4.Job4.source_options

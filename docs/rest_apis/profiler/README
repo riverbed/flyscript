@@ -1,0 +1,49 @@
+PROFILER REST API documentation
+======================
+
+This directory contains generate.sh tool for generating Profiler REST API documentation
+based on the jsondoc GL4 format.
+
+generate.sh
+========
+
+This tool will generate profiler 1.0 and 1.1 json files based on GL4.
+It will then call other tools to generate HTML, printable HTML, and PDF.  
+
+Dependencies:
+ * jsondoc - python package
+ * python 2.7.3
+ * markdown - standard Python package (via easy_install)
+ * wkhtmltopdf
+ * Profiler mainline system installed from source
+   (svn co svn+ssh://<username>@cascade-svn.lab/mazu/svnroot/branches/mainline)
+
+python 2.7.3
+=======
+
+Install pythonbrew 2.7.3 with virtualenv that allows having python 2.6 and python 2.7.3 at the same time.
+
+# as root
+$ curl -kL http://xrl.us/pythonbrewinstall | bash
+$ export PYTHONBREW_ROOT="/usr/local/pythonbrew"
+$ /usr/local/pythonbrew/bin/pythonbrew install 2.7.3
+$ curl https://raw.github.com/pypa/virtualenv/master/virtualenv.py > /usr/local/bin/virtualenv.py
+
+jsondoc
+=======
+
+The 'jsondoc' package is available via source:
+
+$ cd /home/mazu/
+$ git clone git@git.lab.nbttech.com:jsondoc
+
+wkhtmltopdf
+===========
+
+This tools converts an HTML page to PDF.  Download and unzip it:
+
+$ mkdir /home/mazu/wkhtmltopdf/
+$ cd /home/mazu/wkhtmltopdf/
+$ wget http://code.google.com/p/wkhtmltopdf/downloads/detail?name=wkhtmltopdf-0.11.0_rc1-static-i386.tar.bz2
+$ tar xjvf wkhtmltopdf-0.11.0_rc1-static-i386.tar.bz2
+

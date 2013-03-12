@@ -1,0 +1,61 @@
+
+The contents of this directory work together to implement a demo of
+a system for gathering, storing, and visualizing long-term "top talkers"
+information from a Shark appliance.
+
+The components of the system are shown schematically in web/about.png.
+In this system, top talkers data is stored in an instance of mongo db
+(http://www.mongodb.org).  A flyscript script runs persistently in the
+background and perioidically wakes up, retrieves top talkers data from
+a Shark appliance, and stores this data in the database.  At the same
+time, a server process implemented on node.js (http://nodejs.org)
+exports the information in the database via a REST protocol.  Finally,
+a simple web interface uses jquery (http://jquery.com) and
+d3 (http://d3js.org) to retrieve this data from a web browser and
+visualize it in an interesting way.
+
+To run this demo, there are several pre-requisites:
+
+- mongodb
+- python with the following libraries:
+  - flyscript
+  - pymongo (http://api.mongodb.org/python/current/)
+- node.js with the following libraries:
+  - mongodb (https://github.com/mongodb/node-mongodb-native)
+  - restify (https://github.com/mcavage/node-restify)
+
+Once all the above software is installed, the following steps should
+get you up and running:
+
+1. Make sure mongodb is running and you have a database instance
+   available (if you are using mongodb for other tasks, you will
+   probably want to create a database specifically for this demo,
+   you may name it whatever you like...)
+
+2. Run the script talkers-mongo.py on the same host where mongodb
+   is running.  You can run this script with the --help argument
+   to see all the available arguments but arguments you definitely
+   need to supply are:
+     --sharkhost (the hostname or ip address of the Shark appliance)
+     --job (the name of a capture job on the Shark appliance)
+     --db (the name of the mongodb database in which data should be stored)
+   By default, this script will start gathering statistics from the
+   time at which it is run, but if your capture job has been running
+   for a while, you can use the --start argument to ask it to go back
+   in time to gather data (e.g., --start "2 days ago")
+
+3. Edit the script get-talkers.js and set the variable dbname to the
+   name of your mongodb database instance.  This script will implement
+   an HTTP server on port 8080 by default, you can override it as well
+   by editing the variable port if you like.
+
+   Then run this script (on the same host where mongodb and
+   talkers-mongo.py are running).
+
+4. Edit web/main.js, scroll to the very bottom, and change the URL
+   to point to the host and port where get-talkers.js is running.
+   Then load web/index.html in a web browser.  You can load the file
+   directly using a file: URL, or you can place the contents of the
+   web/ directory somewhere where a web server can serve them and then
+   access them with an appropriate http/https URL.
+

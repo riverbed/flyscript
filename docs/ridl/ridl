@@ -1,0 +1,271 @@
+#!/usr/bin/env python
+
+import logging
+import optparse
+import os, os.path
+import re
+import errno
+import sys
+import shlex
+import shutil
+
+import process
+import markdown
+
+class ConfigParser(object):
+    def __init__(self, keys):
+        self._keys = keys
+        self._config = dict([ (n, None) for n in keys.keys() ])
+
+    def read(self, fname):
+        with open(fname, 'r') as fp:
+            for line in fp:
+                line = line.strip()
+                if len(line) == 0 or line.startswith('#'):
+                    continue
+                
+                L = shlex.split(line)
+                cmd = L[0]
+                args = L[1:]
+
+                if cmd not in self._keys:
+                    raise RuntimeError('unknown conf file directive %s' % cmd)
+
+                (multi, minsz, maxsz) = self._keys[cmd]
+                if not multi and self._config[cmd] is not None:
+                    raise RuntimeError('directive %s cannot appear more than once!' % cmd)
+                if len(args) < minsz:
+                    raise RuntimeError('too few arguments (%d) for directive %s (need %d)' % (len(args), cmd, minsz))
+
+                if maxsz != 0 and len(args) > maxsz:
+                    raise RuntimeError('too many arguments (%d) for directive %s (need no more than %d)' % (len(args), cmd, maxsz))
+
+                if multi:
+                    if self._config[cmd] is None:
+                        self._config[cmd] = []
+                    self._config[cmd].append(args)
+                else:
+                    if minsz == 1 and maxsz == 1:
+                        self._config[cmd] = args[0]
+                    else:
+                        self._config[cmd] = args
+
+    def get(self, key, default=None, flatten=False):
+        try:
+            r = self._config[key]
+        except KeyError:
+            return default
+
+        if flatten:
+            r = [ item for sublist in r for item in sublist ]
+        return r
+
+config = ConfigParser({
+    'module-prefix': (False, 1, 1),
+    'tempdir': (False, 1, 1),
+    'outdir': (False, 1, 1),
+    'header': (True, 1, 1),
+    'footer': (True, 1, 1),
+    'version': (False, 1, 1),
+    'file': (True, 1, 0),
+    'static-file': (True, 1, 0),
+    'autolink': (True, 2, 2),
+    'title': (False, 1, 1),
+    'undocumented': (True, 1, 0),
+    'markdown_extension': (True, 1, 0)
+} )
+
+parser = optparse.OptionParser(usage='%prog [-v] directory')
+parser.add_option('-v', '--verbose', dest='verbose', action='store_true',
+                  help='show extra debugging information')
+(options, args) = parser.parse_args()
+
+if len(args) != 1:
+    parser.error('missing source directory')
+
+def fatal(msg):
+    print msg
+    sys.exit(-1)
+    
+indir = args[0]
+if indir[-1] != '/':
+    indir += '/'
+    
+loglevel = logging.WARNING
+if options.verbose:
+    loglevel = logging.DEBUG
+
+logging.basicConfig(level=loglevel)
+log = logging.getLogger()
+
+
+config.read(indir + 'conf')
+
+tempdir = config.get('tempdir')
+if tempdir is None:
+    # XXX os.tempdir() or somethign?
+    pass
+
+outdir = config.get('outdir')
+if outdir is None:
+    fatal('no outdir specified!')
+
+# if we have relative paths, make them relative to indir
+if tempdir[0] != '/':
+    tempdir = indir + tempdir
+if outdir[0] != '/':
+    outdir = indir + outdir
+
+def mkdir_p(dirname):
+    try:
+        os.mkdir(dirname)
+    except OSError, e:
+        if e.errno != errno.EEXIST:
+            raise e
+
+mkdir_p(outdir)
+mkdir_p(tempdir)
+
+md_header = None
+md_footer = None
+html_header_fname = None
+html_footer_fname = None
+
+for hdr in config.get('header', []):
+    fname = hdr[0]
+    if fname.endswith('.md'):
+        if md_header is not None:
+            fatal('cannot have multiple markdown header files')
+        md_header = indir + 'md/' + fname
+    elif fname.endswith('.html'):
+        if html_header_fname is not None:
+            fatal('cannot have multiple html header files')
+        html_header_fname = indir + 'static/' + fname
+    else:
+        fatal('uncrecognized header file %s (should end with .md or .html)' % fname)
+            
+for hdr in config.get('footer', []):
+    fname = hdr[0]
+    if fname.endswith('.md'):
+        if md_footer is not None:
+            fatal('cannot have multiple markdown footer files')
+        md_footer = indir + 'md/' + fname
+    elif fname.endswith('.html'):
+        if html_footer_fname is not None:
+            fatal('cannot have multiple html footer files')
+        html_footer_fname = indir + 'static/' + fname
+    else:
+        fatal('uncrecognized footer file %s (should end with .md or .html)' % fname)
+
+here = os.path.dirname(__file__)
+if len(here) == 0:
+    here = '.'
+    
+if html_header_fname is None:
+    html_header_fname = here + '/static/header.html'
+with open(html_header_fname, 'r') as fp:
+    html_header = fp.read().replace('{title}', config.get('title'))
+    
+if html_footer_fname is None:
+    html_footer_fname = here + '/static/footer.html'
+with open(html_footer_fname, 'r') as fp:
+    html_footer = fp.read()
+
+version = config.get('version')
+if version is None:
+    version = '(unknown version)'
+elif os.path.isfile(indir + version):
+    with open(indir + version, 'r') as fp:
+        version = fp.read()
+    
+
+infiles = config.get('file', [], flatten=True)
+
+proc = process.Processor(log, config.get('module-prefix'),
+                         config.get('undocumented', flatten=True), version)
+
+for link in config.get('autolink'):
+    (pattern, text) = link
+    proc.add_autolink(pattern, text)
+
+md_extensions = [ 'link_headers' ]
+md_ext_config = { }
+
+for ext in config.get('markdown_extension'):
+    extname = ext[0]
+    opts = []
+    for arg in ext[1:]:
+        opts.append(arg.split('=', 1))
+    
+    md_extensions.append(extname)
+    if len(opts) > 0:
+        md_ext_config[extname] = opts
+    
+formatter = markdown.Markdown(extensions=md_extensions,
+                              extension_configs=md_ext_config)
+
+
+for fname in infiles:
+    #
+    # Two step pipeline:
+    # first we process !directives from md/foo.md  and
+    # write the results to tmp/foo.md,
+    # then we do the markdown-to-html conversion and write
+    # the results to html/foo.html.
+    # these steps could be combined and done in memory but
+    # sometimes it is handy to see the intermediate markdown
+    # files so we leave it as is for now...
+    #
+
+    infile = indir + 'md/' + fname
+    tempfile = tempdir + '/' + fname
+    htmlfile = outdir + '/' + fname.replace('.md', '.html')
+
+    log.info('%s -> %s -> %s' % (infile, tempfile, htmlfile))
+    outfp = open(tempfile, 'w')
+
+    for srcfile in ( md_header, infile, md_footer ):
+        if srcfile is not None:
+            with open(srcfile, 'r') as infp:
+                proc.process_one_file(infp, outfp, srcfile)
+
+    outfp.close()
+
+    outfp = open(htmlfile, 'w')
+    outfp.write(html_header)
+
+    infp = open(tempfile, 'r')
+    raw = infp.read()
+    infp.close()
+    
+    html = formatter.convert(raw)
+    outfp.write(html)
+    formatter.reset()
+
+    outfp.write(html_footer)
+    outfp.close()
+
+
+ridl_static_files = [ 'ridl.css' ]
+for fname in ridl_static_files:
+    shutil.copy('static/' + fname, outdir + '/' + fname)
+
+if config.get('static-file') is not None:
+    for fname in config.get('static-file', flatten=True):
+        shutil.copy(indir + '/static/' + fname, outdir + '/' + fname)
+
+
+#XXX make this config or command line
+opt_fatal_warnings = False
+proc.warn_undocumented()
+
+problems = proc.errors()
+if opt_fatal_warnings:
+    problems += proc.warnings()
+
+print '%d warnings and %d errors!' % (proc.warnings(), proc.errors())
+
+if problems > 0:
+    sys.exit(-1)
+else:
+    sys.exit(0)

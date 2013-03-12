@@ -1,0 +1,145 @@
+#!/usr/bin/python
+
+import os
+import os.path
+import sys
+import json
+import copy
+import collections
+import datetime
+import distutils.spawn
+import re
+
+from optparse import OptionParser
+
+import jsondoc
+from jsondoc.html import *
+import subprocess
+
+parser = OptionParser()
+parser.add_option('-f', '--file', dest='filename',
+                  help='JSON doc source file', action="store")
+
+parser.add_option('-o', '--outdir', dest='outdir', default=None,
+                  help='Output directory', action="store")
+
+parser.add_option('-r', '--root', dest='root', default=None,
+                  help='Root output filename, default is built from title, version, status', action="store")
+
+parser.add_option('--nopdfoutput', dest='nopdfoutput', default=False,
+                  help='Optionally disable PDF output', action="store_true")
+
+parser.add_option('-w', '--wkhtmltopdf', dest='wkhtmltopdf', default=None,
+                  help='Path to wkhtmltopdf tool', action="store")
+
+parser.add_option('--nocoverpage', dest='nocoverpage', default=False,
+                  help='Optionally disable coverpage HTML output', action="store_true")
+
+parser.add_option('--noprintable', dest='noprintable', default=False,
+                  help='Optionally disable printable HTML output', action="store_true")
+
+(options, args) = parser.parse_args()
+
+if not options.filename:
+    print "Filename is required"
+    parser.print_usage()
+    sys.exit(1)
+
+jdoc = jsondoc.Doc()
+jdoc.parse_file(options.filename)
+
+title = "%s v%s %s" % (jdoc.title, jdoc.version, jdoc.status)
+
+if options.root:
+    rootname = options.root
+else:
+    rootname = re.sub('[\. {}\[\]]', '_', title.strip())
+
+rootdir = os.path.dirname(options.filename)
+
+if options.outdir is None:
+    outdir = rootdir
+else:
+    outdir = options.outdir
+    
+# HTML version
+html = outdir + "/" + rootname + ".html"
+if os.path.exists(html):
+    os.remove(html)
+    
+tohtml = jsondoc.DocToHtml(jdoc, printable=False)
+tohtml.write(html)
+print "Wrote %s" % html
+
+# Printable HTML version
+if not options.noprintable:
+    phtml = outdir + "/" + rootname + "-printable.html"
+    if os.path.exists(phtml):
+        os.remove(phtml)
+        
+    tohtml = jsondoc.DocToHtml(jdoc, printable=True)
+    tohtml.write(phtml)
+    print "Wrote %s" % phtml
+
+### PDF
+if not options.nopdfoutput:
+    if options.wkhtmltopdf is not None:
+        wkhtmltopdf = options.wkhtmltopdf
+    else:
+        wkhtmltopdf = distutils.spawn.find_executable("wkhtmltopdf")
+        if not wkhtmltopdf:
+            if not "WKHTMLTOPDF" in os.environ:
+                raise ValueError("Cannot find 'wkhtmltopdf' in path, use -w <path> or set WKHTMLTOPDF env variable")
+            wkhtmltopdf = os.environ['WKHTMLTOPDF']
+
+    args = [ wkhtmltopdf, "--version" ]
+    lines = subprocess.check_output(args).split('\n')
+    version = None
+    for line in lines:
+        g = re.search("wkhtmltopdf ([0-9]+)\.([0-9]+)", line)
+        if g:
+            version = int(g.group(2))
+            break
+
+    if version is None:
+        print "WARNING: Could not determine wkhtmltopdf version, assuming latest"
+    else:
+        print "wkhtmltopdf version %d" % version
+
+    if version is None or version >= 10:
+        tocarg = "toc"
+        coverarg = "cover"
+    else:
+        tocarg = "--toc"
+        coverarg ="--cover"
+
+# create a cover apge
+if not options.nocoverpage:
+    cover = outdir + "/" + rootname + "-cover.html"
+    cover_base = HTMLElement('html')
+    cover_body = cover_base.body()
+    cover_body.h1().text = title
+    cover_body.p().text = u"Copyright \xa9 Riverbed Technology Inc. 2013"
+    cover_body.p().text = "Created %s" % datetime.datetime.now().strftime("%b %d, %Y at %I:%m %p")
+
+    f = open(cover, "w")
+    f.write(ET.tostring(cover_base, method="html"))
+    f.close()
+
+if not options.nopdfoutput:
+    pdf = outdir + "/" + rootname + ".pdf" 
+    if os.path.exists(pdf):
+        os.remove(pdf)
+
+    args = [ wkhtmltopdf,
+             '--title', title, 
+             coverarg, cover,
+             tocarg, '--toc-header-text', 'Contents',
+             '--footer-center', '[page]',
+             phtml, pdf ]
+    print ' '.join(args)
+    subprocess.check_call(args)
+    args = [ 'sed', '-i.bak', '-e', 's/#00//g', pdf]
+    subprocess.check_call(args)
+    print "Wrote %s" % pdf
+    os.remove(pdf + ".bak")

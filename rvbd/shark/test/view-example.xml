@@ -1,0 +1,173 @@
+<?xml version="1.0"?>
+<CACEPilotConfiguration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="..\..\..\..\..\specs\XML\PilotConfig.xsd">
+  <Info>
+    <Title>Protocol Distribution - Packets</Title>
+    <Description>Overview of protocol subdivisions at different layers, based on total packets</Description>
+	<Info>&lt;ul&gt;&lt;li&gt;This provides an overview of the protocols involved in the network under observation and their utilization of the network, at the different levels of the network stack. Separate views are provided for each stack level (Network&#8594;Network Protocol Distribution, Transport&#8594;Transport Protocol Distribution, etc.); this view provides global at-a-glance information.&lt;/li&gt;&lt;li&gt;Each bar is selectable (use CTRL to select multiple bars) and is a good starting point for drill-down analysis. The &#8220;IP Conversations&#8221; or &#8220;Bandwidth over time&#8221;, for example, views are easy ways to convert the traffic in a bar into a set of hosts or into a time chart.&lt;/li&gt;&lt;li&gt;Each bar in the bar in the TCP and UDP charts counts both the received &lt;b&gt;or&lt;/b&gt; sent packets for a specific well-known port. Packets that are not sent to a well known port &lt;b&gt;and&lt;/b&gt; not sent from a well known port are shown under the &#8220;Unknown&#8221; bar. If you need to know what ports are inside the &#8220;Unknown&#8221; bar, select it and drill down with the &#8220;Top TCP Ports&#8221; or &#8220;Top UDP Ports&#8221; view.&lt;/li&gt;&lt;/ul&gt;</Info>
+  </Info>
+  <ConfigParameters>
+    <ConfigParameter Name="DefaultSourceName" Type="string" ForceAskUser="False" DefaultValue="" />
+    <ConfigParameter Name="DefaultSourceType" Type="string" ForceAskUser="False" DefaultValue="" />
+    <ConfigParameter Name="DefaultIntervalMsec" Type="uint" ForceAskUser="False" DefaultValue="1000" />
+    <ConfigParameter Name="DefaultShowLastMsec" Type="uint" ForceAskUser="False" DefaultValue="86400000" />
+  </ConfigParameters>
+  <InputSources>
+    <PacketSource SourceUId="S1" SourceName="d:\captures\mix.cap" SourceType="pcapfile" UseDefaultsIfAvailable="True">
+      <Filters>
+        <Filter FilterType="GenericFrameFilter" FilterUId="FUID_FCS_CHECK">
+          <Parameters>
+            <Parameter Name="RejectInvalidFrames" Value="true" />
+          </Parameters>
+        </Filter>
+        <Filter FilterType="decrypt" FilterUId="FUID_Decryption_Filter" />
+      </Filters>
+    </PacketSource>
+  </InputSources>
+  <Processors>
+    <Processor SourceUId="S1" ProcessorUId="PUID_Protos" ProcessorName="Fast_Proto_Distr" Protocol="">
+      <Outputs>
+        <Output OutputUId="OUID_MAC_Packets">
+          <Parameters>
+            <Parameter Name="OutputType" Value="MACProtos" />
+            <Parameter Name="OutputParam" Value="SELECT c1, c4 FROM _table_;" />
+          </Parameters>
+        </Output>
+        <Output OutputUId="OUID_IP_Packets">
+          <Parameters>
+            <Parameter Name="OutputType" Value="IPProtos" />
+            <Parameter Name="OutputParam" Value="SELECT c1, c4 FROM _table_;" />
+          </Parameters>
+        </Output>
+        <Output OutputUId="OUID_TCP_Packets">
+          <Parameters>
+            <Parameter Name="OutputType" Value="TCPProtos" />
+            <Parameter Name="OutputParam" Value="SELECT c1, c4 FROM _table_;" />
+          </Parameters>
+        </Output>
+        <Output OutputUId="OUID_UDP_Packets">
+          <Parameters>
+            <Parameter Name="OutputType" Value="UDPProtos" />
+            <Parameter Name="OutputParam" Value="SELECT c1, c4 FROM _table_;" />
+          </Parameters>
+        </Output>
+      </Outputs>
+    </Processor>	
+  </Processors>
+  <DisplaysData>
+    <DisplayData DisplayUId="DUID_MAC_Packets">
+      <DataSources>
+        <DataSource OutputUId="OUID_MAC_Packets" RefreshInterval="1000" />
+      </DataSources>
+    </DisplayData>
+    <DisplayData DisplayUId="DUID_IP_Packets">
+      <DataSources>
+        <DataSource OutputUId="OUID_IP_Packets" RefreshInterval="1000" />
+      </DataSources>
+    </DisplayData>
+    <DisplayData DisplayUId="DUID_TCP_Packets">
+      <DataSources>
+        <DataSource OutputUId="OUID_TCP_Packets" RefreshInterval="1000" />
+      </DataSources>
+    </DisplayData>
+    <DisplayData DisplayUId="DUID_UDP_Packets">
+      <DataSources>
+        <DataSource OutputUId="OUID_UDP_Packets" RefreshInterval="1000" />
+      </DataSources>
+    </DisplayData>
+  </DisplaysData>
+  <DisplaysUI>
+    <DisplayUI DisplayUId="DUID_MAC_Packets" ComponentName="SingleBars">
+      <DisplayProperties>
+        <Property Name="Title" Value="Network Protocols" />
+        <Property Name="UserPageSize" Value="15" />
+        <Property Name="PxFromBottomBorder" Value="35" />
+        <Property Name="ShowLegend" Value="False" />
+		<Property Name="LegendDimension" Value="110" />
+        <Property Name="YAxisLabel" Value="Packets" />
+      </DisplayProperties>
+      <Help Visible="False">
+        <Text>Total packets aggregated by network layer protocol, e.g. IP, IPv6, ARP.</Text>
+      </Help>
+    </DisplayUI>
+    <DisplayUI DisplayUId="DUID_IP_Packets" ComponentName="SingleBars">
+      <DisplayProperties>
+        <Property Name="Title" Value="Transport Protocols" />
+        <Property Name="UserPageSize" Value="15" />
+        <Property Name="PxFromBottomBorder" Value="35" />
+        <Property Name="ShowLegend" Value="False" />
+		<Property Name="LegendDimension" Value="110" />
+        <Property Name="YAxisLabel" Value="Packets" />
+      </DisplayProperties>
+      <Help Visible="False">
+        <Text>Total packets aggregated by transport layer protocol, e.g. TCP, UDP, ICMP.</Text>
+      </Help>
+    </DisplayUI>
+    <DisplayUI DisplayUId="DUID_TCP_Packets" ComponentName="SingleBars">
+      <DisplayProperties>
+        <Property Name="Title" Value="TCP Protocols" />
+        <Property Name="UserPageSize" Value="15" />
+        <Property Name="PxFromBottomBorder" Value="50" />
+        <Property Name="ShowLegend" Value="False" />
+		<Property Name="LegendDimension" Value="110" />
+        <Property Name="YAxisLabel" Value="Packets" />
+      </DisplayProperties>
+      <Help Visible="False">
+        <Text>Total packets aggregated by TCP port, e.g. HTTP, POP3.</Text>
+      </Help>
+    </DisplayUI>
+    <DisplayUI DisplayUId="DUID_UDP_Packets" ComponentName="SingleBars">
+      <DisplayProperties>
+        <Property Name="Title" Value="UDP Protocols" />
+        <Property Name="UserPageSize" Value="15" />
+        <Property Name="PxFromBottomBorder" Value="50" />
+        <Property Name="ShowLegend" Value="False" />
+		<Property Name="LegendDimension" Value="110" />
+        <Property Name="YAxisLabel" Value="Packets" />
+      </DisplayProperties>
+      <Help Visible="False">
+        <Text>Total packets aggregated by UDP port, e.g. DNS, DHCP.</Text>
+      </Help>
+    </DisplayUI>
+    <DisplaysUILayout>
+      <dotnetbarlayout version="6" zorder="3,4,1,2">
+        <documents>
+          <dockcontainer orientation="1" w="0" h="0">
+            <dockcontainer orientation="0" w="200" h="56">
+              <barcontainer w="38" h="9">
+                <bar name="BaseBar" dockline="0" layout="2" dockoffset="0" state="2" dockside="5" visible="true" seldocktab="0">
+                  <items>
+                    <item name="DUID_MAC_Packets" origBar="" origPos="-1" pos="0" />
+                  </items>
+                </bar>
+              </barcontainer>
+              <barcontainer w="38" h="9">
+                <bar name="DUID_IP_Packets" candockleft="false" candockright="false" candocktop="false" candockbottom="false" candockdoc="true" candocktab="true" text="Transport Protocols" dockline="1" grabhandle="0" menubar="false" stretch="true" style="4" wrapdock="false" wrapfloat="true" canundock="false" tabnav="true" state="2" dockside="5" visible="true" custom="true" canhide="false" imagesize="0" itemsp="0" themes="false" cancust="false" layout="2" eqbutton="false" showtab="true" seldocktab="0" tabalign="2">
+                  <items>
+                    <item name="DUID_IP_Packets" origBar="" origPos="-1" pos="0" />
+                  </items>
+                </bar>
+              </barcontainer>
+            </dockcontainer>
+            <dockcontainer orientation="0" w="200" h="56">
+              <barcontainer w="38" h="8">
+                <bar name="DUID_TCP_Packets" candockleft="false" candockright="false" candocktop="false" candockbottom="false" candockdoc="true" candocktab="true" text="TCP Protocols" dockline="0" grabhandle="0" menubar="false" stretch="true" style="4" wrapdock="false" wrapfloat="true" canundock="false" tabnav="true" state="2" dockside="5" visible="true" custom="true" canhide="false" imagesize="0" itemsp="0" themes="false" cancust="false" layout="2" eqbutton="false" showtab="true" seldocktab="0" tabalign="2">
+                  <items>
+                    <item name="DUID_TCP_Packets" origBar="" origPos="-1" pos="0" />
+                  </items>
+                </bar>
+              </barcontainer>
+              <barcontainer w="38" h="8">
+                <bar name="DUID_UDP_Packets" candockleft="false" candockright="false" candocktop="false" candockbottom="false" candockdoc="true" candocktab="true" text="UDP Protocols" dockline="1" grabhandle="0" menubar="false" stretch="true" style="4" wrapdock="false" wrapfloat="true" canundock="false" tabnav="true" state="2" dockside="5" visible="true" custom="true" canhide="false" imagesize="0" itemsp="0" themes="false" cancust="false" layout="2" eqbutton="false" showtab="true" seldocktab="0" tabalign="2">
+                  <items>
+                    <item name="DUID_UDP_Packets" origBar="" origPos="-1" pos="0" />
+                  </items>
+                </bar>
+              </barcontainer>
+            </dockcontainer>
+          </dockcontainer>
+        </documents>
+        <bars />
+      </dotnetbarlayout>
+    </DisplaysUILayout>
+  </DisplaysUI>
+</CACEPilotConfiguration>

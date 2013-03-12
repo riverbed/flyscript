@@ -1,0 +1,264 @@
+{
+  "restSchemaVersion": "1.0", 
+  "name": "common", 
+  "version": "1.0", 
+  "title": "Riverbed Cascade Shark Common REST API", 
+  "status": "DRAFT 0.2", 
+  "description_file": "overview_common_1_0.md", 
+  "defaultAuthorization": "not required", 
+  "servicePath": "/api/common/1.0", 
+  "schemas": {}, 
+  "resources": {
+    "information": {
+      "methods": {
+        "get system information": {
+          "path": "info", 
+          "httpmethod": "GET", 
+          "description": "Get basic information about the system, including version, model, and management addresses.", 
+          "response": {
+            "description": "General information about this Shark", 
+            "type": "object", 
+            "id": "info", 
+            "properties": {
+              "mgmt_addresses": {
+                "description": "Management IP addresses for this Shark", 
+                "required": true, 
+                "type": "array", 
+                "items": {
+                  "type": "string", 
+                  "id": "address"
+                }
+              }, 
+              "device_name": {
+                "description": "Host name for this Shark", 
+                "required": true, 
+                "type": "string"
+              }, 
+              "serial": {
+                "description": "Serial number of this Shark", 
+                "required": true, 
+                "type": "string"
+              }, 
+              "model": {
+                "description": "Model of this Shark", 
+                "required": true, 
+                "type": "string"
+              }, 
+              "hw_version": {
+                "description": "Hardware version of this Shark (does not apply to Shark VE)", 
+                "required": false, 
+                "type": "string"
+              }, 
+              "sw_version": {
+                "description": "Software version of this Shark", 
+                "required": true, 
+                "type": "string"
+              }
+            }
+          }
+        }, 
+        "list services": {
+          "path": "services", 
+          "httpmethod": "GET", 
+          "description": "List the service identifier and version for the various API services available on this system.", 
+          "response": {
+            "type": "array", 
+            "description": "List of common services available on this Shark", 
+            "id": "services", 
+            "items": {
+              "id": "service", 
+              "type": "object", 
+              "properties": {
+                "id": {
+                  "description": "Identifier for the service", 
+                  "required": true, 
+                  "type": "string"
+                }, 
+                "versions": {
+                  "description": "Available versions for service 'id'", 
+                  "required": true, 
+                  "type": "array", 
+                  "items": {
+                    "type": "string", 
+                    "id": "version"
+                  }
+                }
+              }, 
+              "description": "Description of an available service"
+            }
+          }
+        }, 
+        "ping": {
+          "path": "ping", 
+          "httpmethod": "GET", 
+          "description": "Check availability of the system"
+        }
+      }
+    }, 
+    "authentication": {
+      "methods": {
+        "authentication info": {
+          "path": "auth_info", 
+          "httpmethod": "GET", 
+          "description": "Get information required to authenticate to the system.", 
+          "response": {
+            "description": "Information about authentication protocols", 
+            "type": "object", 
+            "id": "auth_info", 
+            "properties": {
+              "supported_methods": {
+                "description": "Available authentication methods", 
+                "required": true, 
+                "type": "array", 
+                "items": {
+                  "id": "method", 
+                  "type": "string", 
+                  "description": "Authentication method", 
+                  "enum": [
+                    "BASIC", 
+                    "COOKIE", 
+                    "OAUTH_2_0"
+                  ]
+                }
+              }, 
+              "specify_purpose": {
+                "description": "Indication if the user should be prompted to include a purpose with the login request", 
+                "required": true, 
+                "type": "boolean"
+              }, 
+              "login_banner": {
+                "description": "Banner to be displayed on login page", 
+                "required": true, 
+                "type": "string"
+              }
+            }
+          }
+        }, 
+        "login": {
+          "path": "login", 
+          "httpmethod": "POST", 
+          "description": "Authenticate to the system for session-based authentication. The response will include the information needed to construct a session cookie, and will also include the Set-Cookie HTTP header.", 
+          "request": {
+            "description": "Login request information for a Shark session", 
+            "type": "object", 
+            "id": "login", 
+            "properties": {
+              "username": {
+                "description": "The user account to log in with", 
+                "required": true, 
+                "type": "string"
+              }, 
+              "password": {
+                "description": "The password of the given account", 
+                "required": true, 
+                "type": "string"
+              }, 
+              "purpose": {
+                "description": "The stated purpose of the login session", 
+                "notes": "Should only be included if specify_purpose is enabled in the auth_info structure", 
+                "required": false, 
+                "type": "string"
+              }
+            }
+          }, 
+          "response": {
+            "description": "Information available in response to a successful login", 
+            "type": "object", 
+            "id": "login", 
+            "properties": {
+              "session_key": {
+                "description": "Cookie name used to identify the session", 
+                "required": true, 
+                "type": "string"
+              }, 
+              "session_id": {
+                "description": "Unique session identifier ID", 
+                "notes": "Should be set as the value of the 'session_key' cookie", 
+                "required": true, 
+                "type": "string"
+              }
+            }
+          }
+        }, 
+        "logout": {
+          "path": "logout", 
+          "httpmethod": "POST", 
+          "authorization": "required", 
+          "description": "Log out from the system. The request must include a session cookie and will invalidate that cookie for future requests."
+        }
+      }
+    }
+  }, 
+  "errors": [
+    {
+      "error_id": "REQUEST_INVALID_INPUT", 
+      "description": "The request is invalid", 
+      "http_status": 400
+    }, 
+    {
+      "error_id": "AUTH_REQUIRED", 
+      "description": "Missing authentication credentials", 
+      "http_status": 401
+    }, 
+    {
+      "error_id": "AUTH_INVALID_CREDENTIALS", 
+      "description": "Invalid user name or password", 
+      "http_status": 401
+    }, 
+    {
+      "error_id": "AUTH_INVALID_SESSION", 
+      "description": "The authentication session has timed out or is invalid", 
+      "http_status": 401
+    }, 
+    {
+      "error_id": "AUTH_EXPIRED_PASSWORD", 
+      "description": "Account password has expired", 
+      "http_status": 401
+    }, 
+    {
+      "error_id": "AUTH_INVALID_CODE", 
+      "description": "The Oauth access code is invalid", 
+      "http_status": 401
+    }, 
+    {
+      "error_id": "AUTH_EXPIRED_TOKEN", 
+      "description": "The Oauth token has expired", 
+      "http_status": 401
+    }, 
+    {
+      "error_id": "AUTH_EXPIRED_CODE", 
+      "description": "The Oauth access code has expired", 
+      "http_status": 401
+    }, 
+    {
+      "error_id": "AUTH_DISABLED_ACCOUNT", 
+      "description": "Account has been disabled", 
+      "http_status": 403
+    }, 
+    {
+      "error_id": "AUTH_FORBIDDEN", 
+      "description": "Account does not have privileges for this request", 
+      "http_status": 403
+    }, 
+    {
+      "error_id": "AUTH_INVALID_TOKEN", 
+      "description": "The Oauth token is invalid", 
+      "http_status": 403
+    }, 
+    {
+      "error_id": "RESOURCE_NOT_FOUND", 
+      "description": "The requested resource was not found", 
+      "http_status": 404
+    }, 
+    {
+      "error_id": "HTTP_INVALID_METHOD", 
+      "description": "The requested method is not supported by this resouce", 
+      "http_status": 405
+    }, 
+    {
+      "error_id": "INTERNAL_ERROR", 
+      "description": "Internal error occurred", 
+      "http_status": 500
+    }
+  ]
+}

@@ -1,0 +1,72 @@
+{
+	"info": {
+		"description": "Conversations among IP hosts",
+		"title": "IP Conversations"
+	},
+	"processors": [
+		{
+			"keys": [
+				{
+					"field": "ip.src",
+					"id": "c1"
+				},
+				{
+					"field": "ip.dst",
+					"id": "c2"
+				}
+			],
+			"metrics": [
+				{
+					"field": "generic.bytes",
+					"operation": "SUM",
+					"id": "c3"
+				},
+				{
+					"field": "generic.packets",
+					"operation": "SUM",
+					"id": "c4"
+				}
+			],
+			"id": "PUID_IP_Conv",
+			"filters": [],
+			"outputs": [
+				{
+					"fields": [
+						{
+							"id": "c1"
+						},
+						{
+							"id": "c2"
+						},
+						{
+							"id": "c3"
+						},
+						{
+							"id": "c4"
+						}
+					],
+					"id": "OUID_IP_Conv"
+				}
+			]
+		}
+	],
+	"parameters": {
+		"sampling_time_msec": 1000
+	},
+	"watches": [],
+	"client_config": "<CACEPilotConfiguration xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:noNamespaceSchemaLocation=\"..\\..\\..\\..\\..\\specs\\XML\\PilotConfig.xsd\">\n\t<Version Client=\"3.2\" Server=\"3.2\"/>\n\t<Info>\n\t\t<Title>IP Conversations</Title>\n\t\t<Description>Conversations among IP hosts</Description>\n\t\t<Info>&lt;ul&gt;&lt;li&gt;This is a good configuration to start with for bandwidth issues related to an internet connection.&lt;/li&gt;&lt;li&gt;Right click on a host or connection and choose &quot;Resolve Selected&quot; to resolve an IP address to its respective host name.&lt;/li&gt;&lt;li&gt;Drill down to find more details about a host or a connection.&lt;/li&gt;&lt;/ul&gt;</Info>\n\t</Info>\n\t<DisplaysData>\n\t\t<DisplayData DisplayUId=\"DUID_IP_Conv\">\n\t\t\t<DataSources>\n\t\t\t\t<DataSource OutputUId=\"OUID_IP_Conv\" RefreshInterval=\"1000\"/>\n\t\t\t</DataSources>\n\t\t</DisplayData>\n\t</DisplaysData>\n\t<DisplaysUI>\n\t\t<DisplayUI ComponentName=\"ConversationRingEx\" DisplayUId=\"DUID_IP_Conv\">\n\t\t\t<DisplayProperties>\n\t\t\t\t<Property Name=\"Title\" Value=\"IP Conversations\"/>\n\t\t\t</DisplayProperties>\n\t\t\t<Help Visible=\"False\">\n\t\t\t\t<Text>IP host conversations. The size of the host is relative to the amount of data it has transmitted. The size of each connection is relative to how much traffic it has transported between the two endpoints (hosts).</Text>\n\t\t\t\t<Info>IP host conversations. The size of the host is relative to the amount of data it has transmitted. The size of each connection is relative to how much traffic it has transported between the two endpoints (hosts).</Info>\n\t\t\t</Help>\n\t\t</DisplayUI>\n\t\t<DisplaysUILayout>\n\t\t\t<dotnetbarlayout version=\"6\" zorder=\"3,4,1,2\">\n\t\t\t\t<documents>\n\t\t\t\t\t<dockcontainer h=\"0\" orientation=\"0\" w=\"0\">\n\t\t\t\t\t\t<barcontainer h=\"777\" w=\"1348\">\n\t\t\t\t\t\t\t<bar dockline=\"0\" dockoffset=\"0\" dockside=\"5\" layout=\"2\" name=\"BaseBar\" state=\"2\" visible=\"true\">\n\t\t\t\t\t\t\t\t<items>\n\t\t\t\t\t\t\t\t\t<item name=\"DUID_IP_Conv\" origBar=\"\" origPos=\"-1\" pos=\"0\"/>\n\t\t\t\t\t\t\t\t</items>\n\t\t\t\t\t\t\t</bar>\n\t\t\t\t\t\t</barcontainer>\n\t\t\t\t\t</dockcontainer>\n\t\t\t\t</documents>\n\t\t\t\t<bars/>\n\t\t\t</dotnetbarlayout>\n\t\t</DisplaysUILayout>\n\t</DisplaysUI>\n</CACEPilotConfiguration>\n",
+	"input_source": {
+		"disable_index": false,
+		"path": "/admin/noon.cap",
+		"filters": [
+			{
+				"type": "SHARK",
+				"value": "generic.frame.valid = true"
+			},
+			{
+				"type": "DECRYPT",
+				"value": "true"
+			}
+		]
+	}
+}
