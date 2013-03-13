@@ -11,8 +11,12 @@ from rvbd.shark import Shark
 from rvbd.shark.types import Operation, Value, Key
 from rvbd.shark.filters import SharkFilter, TimeFilter
 from rvbd.common.service import UserAuth
-from rvbd.common.exceptions import *
+from rvbd.common.exceptions import RvbdException, RvbdHTTPException
+from rvbd.common.utils import Formatter
 from rvbd.shark import viewutils
+
+import rvbd.common.timeutils as T
+
 
 import os
 import sys
@@ -180,10 +184,10 @@ class SharkTests(unittest.TestCase):
         with self.shark.create_view(interface, columns, filters, sync=True) as view:
             progress = view.get_progress()
             data = view.get_data()
+            ti = view.get_timeinfo()
 
-            # XXX the next statement always fails under test
-            # but works when run in debugger or from script
-            #self.assertTrue(len(data) > 0)
+            #self.assertTrue(ti['start'] > 0)
+            #self.assertTrue(len(data) >= 0)
             self.assertTrue(progress == 100)
             self.assertTrue(view.config['input_source']['path'].startswith('interfaces'))
 
@@ -244,20 +248,6 @@ class SharkTests(unittest.TestCase):
             if len(rows) == 0:
                 logger.warn('no data in view, cannot test aggregated get')
             self.assertTrue(len(rows) == 0 or len(rows) == 1)
-
-        #test on live interface
-        s = self.shark
-	interface = s.get_interface_by_name('mon0')
-	view = s.create_view(interface, columns, None)
-        #give some time to the interface to collect packets
-        time.sleep(5)
-	data = view.get_data()
-        self.assertTrue(len(data) >= 1)
-
-	data = view.get_data(aggregated=True)
-        self.assertTrue(len(data) <= 1)
-
-        view.close()
 
 
     def test_create_view_from_template(self):
@@ -499,14 +489,14 @@ class SharkTests(unittest.TestCase):
         job = self.shark.create_job(interface, 'test_create_job_with_parameters', '20%', indexing_size_limit='1.7GB',
                                     start_immediately=True)
         self.assertEqual(job.size_limit, packet_total_size * 20/100)
-        assert job.data.config.indexing.size_limit < 1.7*1024**3
-        assert job.data.config.indexing.size_limit > 1.6*1024**3
+        self.assertTrue(job.data.config.indexing.size_limit < 1.7*1024**3)
+        self.assertTrue(job.data.config.indexing.size_limit > 1.6*1024**3)
         job.delete()
         job = self.shark.create_job(interface, 'test_create_job_with_parameters', '20%', indexing_size_limit='10%',
                                     packet_retention_time_limit=datetime.timedelta(days=7), start_immediately=True)
         self.assertEqual(job.size_limit, packet_total_size * 20/100)
-        assert job.data.config.indexing.size_limit < index_total_size * 11/100
-        assert job.data.config.indexing.size_limit > index_total_size * 9/100
+        self.assertTrue(job.data.config.indexing.size_limit < index_total_size * 11/100)
+        self.assertTrue(job.data.config.indexing.size_limit > index_total_size * 9/100)
         job.delete()
         #TODO: test other job parameters
 
@@ -551,7 +541,11 @@ class SharkTests(unittest.TestCase):
         pe.enable()
         pe.disable()
         pe.remove_profiler('tm08-1.lab.nbttech.com')
-        
+
+class SharkLiveViewTests(unittest.TestCase):
+    def setUp(self):
+        self.shark = create_shark()
+
     def test_live_view(self):
         shark = self.shark
         job = setup_capture_job(self.shark)
@@ -565,7 +559,73 @@ class SharkTests(unittest.TestCase):
             data2 = cursor.get_data()
             self.assertFalse(data == data2)
 
-        
+    def test_live_view_api(self):
+        #test on live interface
+        s = self.shark
+        columns, filters = setup_defaults()
+        interface = s.get_interface_by_name('mon0')
+        view = s.create_view(interface, columns, None, sync=True)
+
+        time.sleep(20)
+        # 20 seconds delta
+        start = view.get_timeinfo()['start']
+        onesec = 1000000000
+        end = start + 20*onesec
+
+        data = view.get_data(start=start)
+        table = [(x['p'], x['t'], T.datetime_to_nanoseconds(x['t'])) for x in data]
+
+        # XXX figure how to split these up into separate tests without adding 20sec delay
+        #     for each of them
+
+        # aggregate and compare against first row of data
+        delta = table[0][2] - start + onesec
+        d = view.get_data(aggregated=True, delta=delta)
+        self.assertEqual(len(d), 1)
+        self.assertEqual(d[0]['p'], table[0][0])
+
+        # aggregate and compare against first two rows of data
+        # note extra onesec not needed here
+        delta = table[1][2] - start
+        d = view.get_data(aggregated=True, delta=delta)
+        self.assertEqual(len(d), 1)
+        self.assertEqual(d[0]['p'], table[0][0])
+
+        # aggregate with start/end as last two samples
+        #
+        start = table[-2][2]
+        end = table[-1][2]
+        d = view.get_data(aggregated=True, start=start, end=end)
+        self.assertEqual(len(d), 1)
+        self.assertEqual(d[0]['p'], table[-2][0])
+
+        # aggregate with start/end as first and last sample
+        #  result is sum of samples without last one
+        start = table[0][2]
+        end = table[-1][2]
+        d = view.get_data(aggregated=True, start=start, end=end)
+        self.assertEqual(len(d), 1)
+        self.assertEqual(d[0]['p'], sum(x[0] for x in table[:-1]))
+
+        # aggregate with start as second sample and delta to end of table
+        #
+        start = table[1][2]
+        delta = table[-1][2] - start
+        d = view.get_data(aggregated=True, start=start, delta=delta)
+        self.assertEqual(len(d), 1)
+        self.assertEqual(d[0]['p'], sum(x[0] for x in table[1:-1]))
+
+        # aggregate going backwards from last sample
+        #
+        end = table[-1][2]
+        delta = end - table[-3][2]
+        d = view.get_data(aggregated=True, end=end, delta=delta)
+        self.assertEqual(len(d), 1)
+        self.assertEqual(d[0]['p'], sum(x[0] for x in table[-3:-1]))
+
+        view.close()
+
+
 if __name__ == '__main__':
     # for standalone use take one command-line argument: the shark host
     assert len(sys.argv) == 2

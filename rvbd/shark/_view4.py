@@ -7,10 +7,14 @@
 
 
 import time
+import json
+import logging
+
 from rvbd.common import timeutils
 from rvbd.shark import _interfaces
 from rvbd.shark._class_mapping import path_to_class
-import json
+
+logger = logging.getLogger(__name__)
 
 def _to_native(string, legend_entry):
     """ convert `string` to an appropriate native type given `legend_entry` """
@@ -164,10 +168,16 @@ class View4(_interfaces.View):
         * `end`: the end time of the last sample (XXX explain better)
         * `delta`: the size of each sample
         """
-        res = self.shark.api.view.get_stats(self.handle)
-        timeinfo = res.get('time_details')
-        if 'delta' in timeinfo:
-            timeinfo['delta'] = timeinfo['delta']
+        # check three times before giving up
+        count = 0
+        while count < 3:
+            res = self.shark.api.view.get_stats(self.handle)
+            timeinfo = res.get('time_details')
+            if timeinfo['start'] and timeinfo['end']:
+                return timeinfo
+            else:
+                count += 1
+                time.sleep(0.5)
         return timeinfo
 
     def _poll_completion(self):
@@ -247,12 +257,33 @@ class Output4(_interfaces.Output):
                              sorttype="descending", fromentry=0, toentry=0):
 
         if aggregated:
-            if not start or not end or not delta:
-                ti = self.view.get_timeinfo()
+            ti = self.view.get_timeinfo()
 
-            start = (start or ti.start)
+            if start and end:
+                # ignore passed delta
+                delta = end - start
+            elif start and delta:
+                # no changes required
+                pass
+            elif end and delta:
+                # work backwards from end
+                start = end - delta
+            elif delta:
+                # use ti.start
+                start = ti.start
+            elif start:
+                delta = ti.end - start
+            else:
+                # no parameters, use latest ti info
+                start = ti.start
+                delta = ti.end - ti.start
+
+            # this is defined for all aggregated cases
+            #delta = delta + ti.delta
             end = start
-            delta = (end or ti.end) - start + (delta or ti.delta)    
+        else:
+            # XXX subtract time interval here?
+            end = end
 
         if start is None:
             start = 0
@@ -299,7 +330,7 @@ class Output4(_interfaces.Output):
         `start` and `end` are `datetime.datetime` objects representing
         the earliest and latest packets that should be considered.
         If `start` and `end` are unspecified, the start/end of the
-		underlying packet source are used.
+        underlying packet source are used.
 
         `delta` is a `datetime.timedelta` object that can be used to
         override the default data aggregation interval.  If this
@@ -332,6 +363,10 @@ class Output4(_interfaces.Output):
         res = self.view.shark.api.view.get_data(self.view.handle, self.id, **params)
 
         samples = res.get('samples')
+
+        # aggregated debug
+        logger.debug('get_data params: %s' % params)
+
         if samples is None:
             return
 

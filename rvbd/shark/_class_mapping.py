@@ -46,6 +46,6 @@ def path_to_class(shark, path):
         fs = shark.classes.File,
         clips = shark.classes.Clip
         )
-    p = path.split(path, 1)
+    p = path.split('/')
     return mapping[p[0]].get(shark, p[1])
     
