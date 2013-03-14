@@ -295,12 +295,6 @@ class Output4(_interfaces.Output):
             delta = end - start
             end = start
 
-        if start is None:
-            start = 0
-            
-        if end is None:
-            end = 0
-
         if hasattr(delta, 'seconds'):
             # looks like a timedelta
             # total_seconds() would be nice but was added in python 2.7
@@ -309,6 +303,15 @@ class Output4(_interfaces.Output):
         if delta is None:
             #default value = 1s
             delta = 1000000000
+
+        if start is None:
+            start = 0
+            
+        if end is None:
+            end = 0
+        elif not aggregated:
+            #this is to remove the delta added by get_timeinfo()
+            end -= delta
 
         params = {
             'start': start,
