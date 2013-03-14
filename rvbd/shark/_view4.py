@@ -165,8 +165,18 @@ class View4(_interfaces.View):
         following entries:
 
         * `start`: the time of the first packet for which data is available
-        * `end`: the end time of the last sample (XXX explain better)
-        * `delta`: the size of each sample
+        * `end`: the end time of the last sample
+        * `delta`: the sampling time of each sample
+        
+        This function adds a delta to the end time of the view provided by shark
+        If you need the timeinfo provided by shark as it is use _get_timeinfo
+        """
+        ti = self._get_timeinfo()
+        ti.end = ti.end + ti.delta
+        return ti
+
+    def _get_timeinfo(self):
+        """Return the timeinfo exactly as it comes from shark
         """
         # check three times before giving up
         count = 0
@@ -262,21 +272,25 @@ class Output4(_interfaces.Output):
             """
             These are the operations to do in case of an aggregated call
 
+            ti = view.get_timeinfo()
+            
+            NOTE: get_timeinfo is different from _get_timeinfo
+            
 | flyscript_start | flyscript_end | shark_start | shark_end | shark_delta                  |
 |-----------------+---------------+-------------+-----------+------------------------------|
-| None            | None          | ti.start    | ti.start  | ti.end - ti.start + ti.delta |
+| None            | None          | ti.start    | ti.start  | ti.end - ti.start            |
 | None            | e             | ti.start    | ti.start  | e - ti.start                 |
-| s               | None          | s           | s         | ti.end - s + ti.delta        |
+| s               | None          | s           | s         | ti.end - s                   |
 | s               | e             | s           | s         | e - s                        |
             """
 
             if start is None or end is None:
+                #retrieve the timeinfo only if you need it
                 ti = self.view.get_timeinfo()
 
             #normalize to reduce complexity
             start = start or ti.start
-            end = end or (ti.end + ti.delta) #every time we use ti.end we need to add the ti.delta
-
+            end = end or ti.end
             #now that it's normalized, time for easy math
             delta = end - start
             end = start
