@@ -257,33 +257,29 @@ class Output4(_interfaces.Output):
                              sorttype="descending", fromentry=0, toentry=0):
 
         if aggregated:
-            ti = self.view.get_timeinfo()
+            if delta is not None:
+                raise ValueError('delta cannot be used with aggregated requests')
+            """
+            These are the operations to do in case of an aggregated call
 
-            if start and end:
-                # ignore passed delta
-                delta = end - start
-            elif start and delta:
-                # no changes required
-                pass
-            elif end and delta:
-                # work backwards from end
-                start = end - delta
-            elif delta:
-                # use ti.start
-                start = ti.start
-            elif start:
-                delta = ti.end - start
-            else:
-                # no parameters, use latest ti info
-                start = ti.start
-                delta = ti.end - ti.start
+| flyscript_start | flyscript_end | shark_start | shark_end | shark_delta                  |
+|-----------------+---------------+-------------+-----------+------------------------------|
+| None            | None          | ti.start    | ti.start  | ti.end - ti.start + ti.delta |
+| None            | e             | ti.start    | ti.start  | e - ti.start                 |
+| s               | None          | s           | s         | ti.end - s + ti.delta        |
+| s               | e             | s           | s         | e - s                        |
+            """
 
-            # this is defined for all aggregated cases
-            #delta = delta + ti.delta
+            if start is None or end is None:
+                ti = self.view.get_timeinfo()
+
+            #normalize to reduce complexity
+            start = start or ti.start
+            end = end or (ti.end + ti.delta) #every time we use ti.end we need to add the ti.delta
+
+            #now that it's normalized, time for easy math
+            delta = end - start
             end = start
-        else:
-            # XXX subtract time interval here?
-            end = end
 
         if start is None:
             start = 0
@@ -297,6 +293,7 @@ class Output4(_interfaces.Output):
             delta = ((delta.days * 24 * 3600) + delta.seconds) * 10**9
 
         if delta is None:
+            #default value = 1s
             delta = 1000000000
 
         params = {
