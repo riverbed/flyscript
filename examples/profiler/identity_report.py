@@ -95,8 +95,14 @@ class IdentityApp(ProfilerApp):
 
         group.add_option('--summary-report', dest='summary_report', default=False,
                          action='store_true',
-                         help='Run summary reports for hosts during found '
-                              'login times.')
+                         help='Run summary reports for hosts during found login times.')
+
+        group.add_option('--groupby-application', dest='groupby_application', default=False,
+                         action='store_true',
+                         help='Run summary reports for hosts during found login times.')
+        group.add_option('--groupby-interface', dest='groupby_interface', default=False,
+                         action='store_true',
+                         help='Run summary reports for hosts during found login times.')
 
         group.add_option('--csv', dest='csv', default=False, action='store_true',
                          help='Print results in CSV table.')
@@ -106,6 +112,9 @@ class IdentityApp(ProfilerApp):
         group.add_option('--testfile', dest='testfile', default=None,
                          help='Optional test file with identity events to use in place of '
                               'actual profiler queries.')
+        group.add_option('--usecache', dest='usecache', default=False, action='store_true',
+                         help='Use internal cache to help with large traffic query sets')
+
         parser.add_option_group(group)
 
     def validate_args(self):
@@ -195,7 +204,18 @@ class IdentityApp(ProfilerApp):
         elif report_type == 'summary':
             columns = [c[0] for c in SCOLUMNS]
             report = TrafficSummaryReport(self.profiler)
-            report.run('hos', 
+            
+            if self.options.groupby_application:
+                columns.insert(0, 'app_name')
+                groupby = 'app'
+            elif self.options.groupby_interface:
+                columns.insert(0, 'interface_alias')
+                columns.insert(0, 'interface')
+                groupby = 'ifc'
+            else:
+                groupby = 'hos'
+
+            report.run(groupby, 
                        columns, 
                        timefilter=timefilter, 
                        trafficexpr=texpr,
@@ -276,15 +296,18 @@ class IdentityApp(ProfilerApp):
             timefilter = TimeFilter(string_to_datetime(event[1]),
                                     string_to_datetime(event[2]))
 
-            # check cache - only consider a hit when whole time period is covered
-            minutes = timefilter.profiler_minutes(astimestamp=True)
+            if self.options.usecache and report_type == 'timeseries':
+                # check cache - only consider a hit when whole time period is covered
+                minutes = timefilter.profiler_minutes(astimestamp=True)
 
-            if host in cache and all(t in cache[host] for t in minutes):
-                data = [cache[host][t] for t in minutes]
+                if host in cache and all(t in cache[host] for t in minutes):
+                    data = [cache[host][t] for t in minutes]
+                else:
+                    legend, data = self.traffic_report(host, timefilter, report_type)
+                    # store results in cache by host->times->data
+                    cache.setdefault(host, {}).update((int(x[0]), x) for x in data)
             else:
                 legend, data = self.traffic_report(host, timefilter, report_type)
-                # store results in cache by host->times->data
-                cache.setdefault(host, {}).update((int(x[0]), x) for x in data)
 
             if data:
                 if self.options.aggregate and report_type == 'timeseries':
@@ -295,16 +318,11 @@ class IdentityApp(ProfilerApp):
                     aggmap = [x[1] for x in TCOLUMNS]
                     aggregates = [aggmap[i](x) for i, x in enumerate(columns)]
                     combined_activity.append(list(event) + aggregates)
-                elif report_type == 'timeseries':
-                    # create entry for each time series report
+                elif report_type == 'timeseries' or report_type == 'summary':
+                    # create entry for each element in report
                     for row in data:
                         r = ['--' if x == '' else x for x in row]
                         combined_activity.append(list(event) + r)
-
-                elif report_type == 'summary':
-                    # assume only single row in summary results, no need
-                    # for aggregation functions
-                    combined_activity.append(list(event) + data[0])
                 else:
                     raise RuntimeError('unknown report type: %s' % report_type)
 
