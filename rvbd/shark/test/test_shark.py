@@ -617,21 +617,22 @@ class SharkLiveViewTests(unittest.TestCase):
         # self.assertEqual(len(d), 1)
         # self.assertEqual(d[0]['p'], table[0][0])
 
-        # aggregate with start/end as last two samples
-        #
-        start = table[-2][2]
-        end = table[-1][2]
-        d = view.get_data(aggregated=True, start=start, end=end)
-        self.assertEqual(len(d), 1)
-        self.assertEqual(d[0]['p'], table[-2][0])
+        if len(table) >= 2:
+            # aggregate with start/end as last two samples
+            #
+            start = table[-2][2]
+            end = table[-1][2]
+            d = view.get_data(aggregated=True, start=start, end=end)
+            self.assertEqual(len(d), 1)
+            self.assertEqual(d[0]['p'], table[-2][0])
 
-        # aggregate with start/end as first and last sample
-        #  result is sum of samples without last one
-        start = table[0][2]
-        end = table[-1][2]
-        d = view.get_data(aggregated=True, start=start, end=end)
-        self.assertEqual(len(d), 1)
-        self.assertEqual(d[0]['p'], sum(x[0] for x in table[:-1]))
+            # aggregate with start/end as first and last sample
+            #  result is sum of samples without last one
+            start = table[0][2]
+            end = table[-1][2]
+            d = view.get_data(aggregated=True, start=start, end=end)
+            self.assertEqual(len(d), 1)
+            self.assertEqual(d[0]['p'], sum(x[0] for x in table[:-1]))
 
         # # aggregate with start as second sample and delta to end of table
         # #
