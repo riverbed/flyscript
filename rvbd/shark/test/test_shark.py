@@ -12,7 +12,6 @@ from rvbd.shark.types import Operation, Value, Key
 from rvbd.shark.filters import SharkFilter, TimeFilter
 from rvbd.common.service import UserAuth
 from rvbd.common.exceptions import RvbdException, RvbdHTTPException
-from rvbd.common.utils import Formatter
 from rvbd.shark import viewutils
 
 import rvbd.common.timeutils as T
@@ -135,53 +134,42 @@ def create_tracefile(shark):
         logger.info('uploaded test trace file')
     return tracefile
 
-class SetupMixin(object):
-    def setUp(self):
-        """Does proper cleanup of the shark appliance from 
-        
-        - views 
-        created without context manager and not closed, including 
-        views from failed tests that are not automatically closed if they
-        do not use context manager
-        
-        - jobs
-        Delete all jobs except the first one which is supposed to be a running job
-        on mon0 by default
 
-        - clips
-        """
-        views = self.shark.get_open_views()
-        for view in views:
-            view.close()
-        
-        jobs = self.shark.get_capture_jobs()
-        if len(jobs) > 1:
-            for job in jobs:
-                job.delete()
-        else:
-            setup_capture_job(self.shark)
+def cleanup_shark(shark):
+    """Does proper cleanup of the shark appliance from views, jobs and clips
 
-        clips = self.shark.get_clips()
-        for clip in clips:
-            clip.delete()
+    - views
+    created without context manager and not closed, including
+    views from failed tests that are not automatically closed if they
+    do not use context manager
 
-class SharkTests(unittest.TestCase, SetupMixin):
+    - jobs
+    Delete all jobs except the first one which is supposed to be a running job
+    on mon0 by default
+
+    - clips
+    """
+    # XXX investigate implementing this at end of all tests instead of
+    #     after every test
+
+    for v in shark.api.view.get_all():
+        shark.api.view.close(v.id)
+
+    for j in shark.api.jobs.get_all():
+        if j['config']['name'] != 'Flyscript-tests-job':
+            shark.api.jobs.delete(j.id)
+
+    for c in shark.api.clips.get_all():
+        shark.api.clips.delete(c.id)
+
+
+class SharkTests(unittest.TestCase):
     def setUp(self):
         self.shark = create_shark()
-        SetupMixin.setUp(self)
-
-        #self.columns, self.filters = create_defaults()
-        #self.job = create_capture_job(self.shark)
-        #self.interface = create_interface(self.shark)
-        #self.clip = create_trace_clip(self.shark, self.job)
-        #self.tracefile = create_tracefile(self.shark)
 
     def tearDown(self):
-        try:
-            self.clip.delete()
-        except AttributeError:
-            pass
-        
+        cleanup_shark(self.shark)
+
     def test_info(self):
         """ Test server_info, stats, interfaces,  logininfo and protocol/api versions
         """
@@ -573,10 +561,13 @@ class SharkTests(unittest.TestCase, SetupMixin):
         pe.disable()
         pe.remove_profiler('tm08-1.lab.nbttech.com')
 
-class SharkLiveViewTests(unittest.TestCase, SetupMixin):
+
+class SharkLiveViewTests(unittest.TestCase):
     def setUp(self):
         self.shark = create_shark()
-        SetupMixin.setUp(self)
+
+    def tearDown(self):
+        cleanup_shark(self.shark)
 
     def test_live_view(self):
         shark = self.shark
@@ -626,21 +617,21 @@ class SharkLiveViewTests(unittest.TestCase, SetupMixin):
         # self.assertEqual(len(d), 1)
         # self.assertEqual(d[0]['p'], table[0][0])
 
-        # # aggregate with start/end as last two samples
-        # #
-        # start = table[-2][2]
-        # end = table[-1][2]
-        # d = view.get_data(aggregated=True, start=start, end=end)
-        # self.assertEqual(len(d), 1)
-        # self.assertEqual(d[0]['p'], table[-2][0])
+        # aggregate with start/end as last two samples
+        #
+        start = table[-2][2]
+        end = table[-1][2]
+        d = view.get_data(aggregated=True, start=start, end=end)
+        self.assertEqual(len(d), 1)
+        self.assertEqual(d[0]['p'], table[-2][0])
 
-        # # aggregate with start/end as first and last sample
-        # #  result is sum of samples without last one
-        # start = table[0][2]
-        # end = table[-1][2]
-        # d = view.get_data(aggregated=True, start=start, end=end)
-        # self.assertEqual(len(d), 1)
-        # self.assertEqual(d[0]['p'], sum(x[0] for x in table[:-1]))
+        # aggregate with start/end as first and last sample
+        #  result is sum of samples without last one
+        start = table[0][2]
+        end = table[-1][2]
+        d = view.get_data(aggregated=True, start=start, end=end)
+        self.assertEqual(len(d), 1)
+        self.assertEqual(d[0]['p'], sum(x[0] for x in table[:-1]))
 
         # # aggregate with start as second sample and delta to end of table
         # #

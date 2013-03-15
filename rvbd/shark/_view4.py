@@ -265,25 +265,25 @@ class Output4(_interfaces.Output):
     def _parse_output_params(self, start=None, end=None, delta=None,
                              aggregated=False, sortby=None,
                              sorttype="descending", fromentry=0, toentry=0):
+        """
+        These are the operations to do in case of an aggregated call
 
+        ti = view.get_timeinfo()
+
+        NOTE: get_timeinfo is different from _get_timeinfo
+
+        | fs_start* | fs_end* | shark_start | shark_end | shark_delta       |
+        |-----------+---------+-------------+-----------+-------------------|
+        | None      | None    | ti.start    | ti.start  | ti.end - ti.start |
+        | None      | e       | ti.start    | ti.start  | e - ti.start      |
+        | s         | None    | s           | s         | ti.end - s        |
+        | s         | e       | s           | s         | e - s             |
+
+        (fs == flyscript)
+        """
         if aggregated:
             if delta is not None:
                 raise ValueError('delta cannot be used with aggregated requests')
-            """
-            These are the operations to do in case of an aggregated call
-
-            ti = view.get_timeinfo()
-            
-            NOTE: get_timeinfo is different from _get_timeinfo
-            
-| flyscript_start | flyscript_end | shark_start | shark_end | shark_delta                  |
-|-----------------+---------------+-------------+-----------+------------------------------|
-| None            | None          | ti.start    | ti.start  | ti.end - ti.start            |
-| None            | e             | ti.start    | ti.start  | e - ti.start                 |
-| s               | None          | s           | s         | ti.end - s                   |
-| s               | e             | s           | s         | e - s                        |
-            """
-
             if start is None or end is None:
                 #retrieve the timeinfo only if you need it
                 ti = self.view.get_timeinfo()
