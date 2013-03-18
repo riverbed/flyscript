@@ -59,9 +59,26 @@ class StingrayTrafficManager(rvbd.common.service.Service):
                                                      auth=auth, force_ssl=force_ssl,
                                                      versions=[APIVersion("1.0")])
             
-    def create_trafficscript_rule(self, vserver, rule, trafficscript):
-        # Do the work here
-        print "Would create rule %s on vserver %s" % (rule, vserver)
+    def create_trafficscript_rule(self, vserver, trafficscript):
+        rule = 'ARX_' + vserver
+        self.conn.upload_file("/api/tm/1.0/config/active/rules/%s" % rule, data=trafficscript)
+
+        need_to_add=True
+        jp = self.conn.json_request("/api/tm/1.0/config/active/vservers/%s" % vserver)
+        for r in jp['properties']['basic']['response_rules']:
+            if r ==  rule:
+                need_to_add=False
+                break
+            elif r == '/' + rule:
+                need_to_add=False
+                loc = jp['properties']['basic']['response_rules'].index(r)
+                jp['properties']['basic']['response_rules'][loc] = rule
+                break
+
+        if need_to_add:
+            jp['properties']['basic']['response_rules'].append(rule)
+
+        self.conn.json_request("/api/tm/1.0/config/active/vservers/%s" % vserver, method="PUT", data=jp)
     
     def change_rule(self, vserver, rule, enable=True, request=True, response=True):
         jp = self.conn.json_request("/api/tm/1.0/config/active/vservers/%s" % vserver)
