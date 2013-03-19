@@ -8,6 +8,7 @@
 
 
 import functools
+
 from rvbd.common.utils import DictObject
 
 def loaded(f):
@@ -59,13 +60,16 @@ class View(object):
 
     def _ensure_output(self):
         if len(self._outputs) == 0:
+            #change this since postapply doesn't load
+            #the view parameters
             self._postapply()
 
     @classmethod
     def _process_view(cls, view, source, sync):
-        if not source.is_live() and sync:
+        if sync:
             try:
-                view._poll_completion()
+                if not source.is_live():
+                    view._poll_completion()
                 view._postapply()
             except:
                 view.close()

@@ -7,9 +7,14 @@
 
 
 import time
+import json
+import logging
+
 from rvbd.common import timeutils
 from rvbd.shark import _interfaces
-import json
+from rvbd.shark._class_mapping import path_to_class
+
+logger = logging.getLogger(__name__)
 
 def _to_native(string, legend_entry):
     """ convert `string` to an appropriate native type given `legend_entry` """
@@ -51,17 +56,22 @@ def _to_native(string, legend_entry):
     return string
 
 class View4(_interfaces.View):
-    def __init__(self, shark, handle, config=None):
+    def __init__(self, shark, handle, config=None, source=None):
         super(View4, self).__init__()
         
         self.shark = shark
         self.handle = handle
+        self.source = source
         self._outputs = {}
 
         if config is None:
             self.config = shark.api.view.get_config(handle)
         else:
             self.config = config
+
+        if source is None:
+            path = self.config['input_source']['path']
+            self.source = path_to_class(shark, path)
 
     def __repr__(self):
         d = {}
@@ -81,7 +91,7 @@ class View4(_interfaces.View):
         template_json['input_source']['path'] = source.source_path
         res = shark.api.view.add(template_json)
         handle = res.get('id')
-        view = cls(shark, handle, template_json)
+        view = cls(shark, handle, template_json, source)
         if not source.is_live() and sync:
             try:
                 view._poll_completion()
@@ -125,7 +135,7 @@ class View4(_interfaces.View):
 
         handle = res.get('id')
 
-        view = cls(shark, handle, template)
+        view = cls(shark, handle, template, source)
         return cls._process_view(view, source, sync)
 
     @staticmethod
@@ -155,13 +165,29 @@ class View4(_interfaces.View):
         following entries:
 
         * `start`: the time of the first packet for which data is available
-        * `end`: the end time of the last sample (XXX explain better)
-        * `delta`: the size of each sample
+        * `end`: the end time of the last sample
+        * `delta`: the sampling time of each sample
+        
+        This function adds a delta to the end time of the view provided by shark
+        If you need the timeinfo provided by shark as it is use _get_timeinfo
         """
-        res = self.shark.api.view.get_stats(self.handle)
-        timeinfo = res.get('time_details')
-        if 'delta' in timeinfo:
-            timeinfo['delta'] = timeinfo['delta']
+        ti = self._get_timeinfo()
+        ti.end = ti.end + ti.delta
+        return ti
+
+    def _get_timeinfo(self):
+        """Return the timeinfo exactly as it comes from shark
+        """
+        # check three times before giving up
+        count = 0
+        while count < 3:
+            res = self.shark.api.view.get_stats(self.handle)
+            timeinfo = res.get('time_details')
+            if timeinfo['start'] and timeinfo['end']:
+                return timeinfo
+            else:
+                count += 1
+                time.sleep(0.5)
         return timeinfo
 
     def _poll_completion(self):
@@ -177,7 +203,6 @@ class View4(_interfaces.View):
             for output in processor['outputs']:
                 self._outputs[output['id']] = Output4(self, output['id'])
 
-        self.ti = self.get_timeinfo()
 
     def close(self):
         """Close this view on the server (which permanently deletes
@@ -240,26 +265,53 @@ class Output4(_interfaces.Output):
     def _parse_output_params(self, start=None, end=None, delta=None,
                              aggregated=False, sortby=None,
                              sorttype="descending", fromentry=0, toentry=0):
-        if start == None:
-            start = self.view.ti.start
+        """
+        These are the operations to do in case of an aggregated call
 
-        if end == None:
-            end = self.view.ti.end
+        ti = view.get_timeinfo()
 
-        if aggregated and delta is not None:
-            raise RuntimeError('cannot specify both delta and aggregated')
+        NOTE: get_timeinfo is different from _get_timeinfo
 
+        | fs_start* | fs_end* | shark_start | shark_end | shark_delta       |
+        |-----------+---------+-------------+-----------+-------------------|
+        | None      | None    | ti.start    | ti.start  | ti.end - ti.start |
+        | None      | e       | ti.start    | ti.start  | e - ti.start      |
+        | s         | None    | s           | s         | ti.end - s        |
+        | s         | e       | s           | s         | e - s             |
+
+        (fs == flyscript)
+        """
         if aggregated:
-            # XXXCJ - adding delta is required because end is the *beginning*
-            # of the last sample interval, not the end...
-            delta = end - start + self.view.ti.delta
-        elif delta == None:
-            delta = self.view.ti.delta
+            if delta is not None:
+                raise ValueError('delta cannot be used with aggregated requests')
+            if start is None or end is None:
+                #retrieve the timeinfo only if you need it
+                ti = self.view.get_timeinfo()
+
+            #normalize to reduce complexity
+            start = start or ti.start
+            end = end or ti.end
+            #now that it's normalized, time for easy math
+            delta = end - start
+            end = start
 
         if hasattr(delta, 'seconds'):
             # looks like a timedelta
             # total_seconds() would be nice but was added in python 2.7
             delta = ((delta.days * 24 * 3600) + delta.seconds) * 10**9
+
+        if delta is None:
+            #default value = 1s
+            delta = 1000000000
+
+        if start is None:
+            start = 0
+            
+        if end is None:
+            end = 0
+        elif not aggregated:
+            #this is to remove the delta added by get_timeinfo()
+            end -= delta
 
         params = {
             'start': start,
@@ -268,7 +320,7 @@ class Output4(_interfaces.Output):
             }
 
         if aggregated:
-            params['aggregated'] = None
+            params['aggregated'] = True
 
         if sortby:
             params.update({
@@ -292,7 +344,7 @@ class Output4(_interfaces.Output):
         `start` and `end` are `datetime.datetime` objects representing
         the earliest and latest packets that should be considered.
         If `start` and `end` are unspecified, the start/end of the
-		underlying packet source are used.
+        underlying packet source are used.
 
         `delta` is a `datetime.timedelta` object that can be used to
         override the default data aggregation interval.  If this
@@ -325,6 +377,10 @@ class Output4(_interfaces.Output):
         res = self.view.shark.api.view.get_data(self.view.handle, self.id, **params)
 
         samples = res.get('samples')
+
+        # aggregated debug
+        logger.debug('get_data params: %s' % params)
+
         if samples is None:
             return
 

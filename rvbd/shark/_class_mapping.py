@@ -40,3 +40,12 @@ class Classesv4(Classes):
         self.ExtractorField = _fields4.ExtractorField
         
 
+def path_to_class(shark, path):
+    mapping = dict(
+        interfaces = shark.classes.Interface,
+        fs = shark.classes.File,
+        clips = shark.classes.Clip
+        )
+    p = path.split('/', 1)
+    return mapping[p[0]].get(shark, p[1])
+    
