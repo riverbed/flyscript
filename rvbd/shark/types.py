@@ -13,8 +13,8 @@ script creation
 __all__=['Operation', 'Key', 'Value']
 
 class Operation(object):
-    '''Enumeration of the possible operations that can be performed on a fields.
-    '''
+    """Enumeration of the possible operations that can be performed on a fields.
+    """
     sum = 'SUM'
     avg = 'AVG'
     timeavg = 'TIME_AVG'
@@ -40,15 +40,15 @@ class Field(object):
         return self.field_string
     
 class Key(Field):
-    '''This class can be used to identify a fields as a key in a view
-    '''
+    """This class can be used to identify a fields as a key in a view
+    """
     def __init__(self, field, description=None):
         super(Key, self).__init__(field, key=True, operation=Operation.none,
                                   description=description)
         
 class Value(Field):
-    '''This class can be used to identify a fields as a value in a view
-    '''
+    """This class can be used to identify a fields as a value in a view
+    """
     def __init__(self, field, operation=Operation.sum, description=None):
         super(Value, self).__init__(field, operation=operation,
                                     description=description)

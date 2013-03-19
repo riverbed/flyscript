@@ -6,12 +6,11 @@
 # This software is distributed "AS IS" as set forth in the License.
 
 
-
 from rvbd.common.app import Application
 import rvbd.shark
 
 class SharkApp(Application):
-    '''Simple class to wrap common command line parsing'''
+    """Simple class to wrap common command line parsing"""
     def __init__(self, *args, **kwargs):
         super(SharkApp, self).__init__(*args, **kwargs)
         self.optparse.set_usage('%prog SHARK')
