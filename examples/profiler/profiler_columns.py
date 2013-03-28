@@ -112,5 +112,6 @@ class ProfilerInfo(ProfilerApp):
             columns.sort(key=lambda x: x.key)
             self.print_columns(columns)
 
-            
-ProfilerInfo().run()
+
+if __name__ == '__main__':
+    ProfilerInfo().run()

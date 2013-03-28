@@ -65,4 +65,6 @@ class CreateView(SharkApp):
         # Done! We can close the view.
         v.close()
 
-CreateView().run()
+
+if __name__ == '__main__':
+    CreateView().run()

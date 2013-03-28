@@ -44,4 +44,6 @@ def main(app):
 
     print 'clip created successfully'
 
-SharkApp(main).run()
+
+if __name__ == '__main__':
+    SharkApp(main).run()

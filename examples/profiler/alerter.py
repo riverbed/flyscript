@@ -109,7 +109,9 @@ class AlerterApp(ProfilerApp):
 
             time.sleep(5)
 
-AlerterApp().run()
+
+if __name__ == '__main__':
+    AlerterApp().run()
 
 
 

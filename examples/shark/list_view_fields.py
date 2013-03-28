@@ -15,9 +15,13 @@ For full field details, use the -v flag.
 '''
 
 from rvbd.shark.app import SharkApp
+from rvbd.common.utils import Formatter
 
 def main(app):
-    for f in app.shark.get_extractor_fields():
-        print '{0}\t{1}\t{2}'.format(f.id, f.description, f.type)
+    headers = ['ID', 'Description', 'Type']
+    data = [(f.id, f.description, f.type) for f in app.shark.get_extractor_fields()]
+    Formatter.print_table(data, headers)
 
-SharkApp(main).run()
+
+if __name__ == '__main__':
+    SharkApp(main).run()

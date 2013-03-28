@@ -83,7 +83,8 @@ class DeviceReport(ProfilerApp):
         Formatter.print_table(data, headers, paginate=30)
 
 
-DeviceReport().run()
+if __name__ == '__main__':
+    DeviceReport().run()
 
 
 

@@ -68,7 +68,9 @@ class ProfilerReport(ProfilerApp):
 
         Formatter.print_table(data, headers)
 
-ProfilerReport().run()
+
+if __name__ == '__main__':
+    ProfilerReport().run()
 
 
 

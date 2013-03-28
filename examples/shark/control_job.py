@@ -60,4 +60,6 @@ class ControlJob(SharkApp):
         if done == 0:
             self.optparse.error('nothing to do!')
 
-ControlJob().run()
+
+if __name__ == '__main__':
+    ControlJob().run()

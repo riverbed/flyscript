@@ -176,4 +176,6 @@ def main(app):
 
     v.close()
 
-SharkApp(main).run()
+
+if __name__ == '__main__':
+    SharkApp(main).run()

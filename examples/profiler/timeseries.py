@@ -34,4 +34,6 @@ def main(app):
     printer = pprint.PrettyPrinter(2)
     printer.pprint(data)
 
-ProfilerApp(main).run()
+
+if __name__ == '__main__':
+    ProfilerApp(main).run()

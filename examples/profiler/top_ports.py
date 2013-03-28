@@ -38,4 +38,5 @@ def main(app):
     printer.pprint(data[:20])
 
 
-ProfilerApp(main).run()
+if __name__ == '__main__':
+    ProfilerApp(main).run()

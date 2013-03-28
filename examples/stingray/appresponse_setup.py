@@ -80,4 +80,6 @@ if( string.regexmatch( $body, "^(.*?)(<head.*?>)(.*)$", "i" ) ) {
         # Call to the stingray to create the rule
         self.stingray.create_trafficscript_rule (self.options.vserver, trafficscript)
 
-App().run()
+
+if __name__ == '__main__':
+    App().run()

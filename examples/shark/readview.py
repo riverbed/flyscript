@@ -101,4 +101,5 @@ class ReadView(SharkApp):
                     self._do_one_output(o)
 
 
-ReadView().run()
+if __name__ == '__main__':
+    ReadView().run()

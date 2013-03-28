@@ -78,4 +78,6 @@ class SharkInfo(SharkApp):
             for output in view.all_outputs():
                 print '\t\t{0}'.format(output.id)
 
-SharkInfo().run()
+
+if __name__ == '__main__':
+    SharkInfo().run()

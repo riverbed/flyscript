@@ -371,5 +371,6 @@ class IdentityApp(ProfilerApp):
             Formatter.print_table(tbl_data, headers)
 
 
-IdentityApp().run()
+if __name__ == '__main__':
+    IdentityApp().run()
 

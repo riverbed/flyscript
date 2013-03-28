@@ -60,4 +60,6 @@ class CreateJob(SharkApp):
         print 'Capture Job created successfully'
         #job.delete()
 
-CreateJob().run()
+
+if __name__ == '__main__':
+    CreateJob().run()

@@ -228,4 +228,6 @@ class BackupApp(SharkApp):
 
         print "Restore complete."
 
-BackupApp().run()
+
+if __name__ == '__main__':
+    BackupApp().run()
