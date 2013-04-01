@@ -201,7 +201,7 @@ class Job4(_interfaces._InputSource):
     def size_on_disk(self):
         """The capture job actual size, corresponding to the one shown by the
         Shark UI shows."""
-        return self.data.packet_size
+        return self.data['status']['packet_size']
 
     @property
     def size_limit(self):
