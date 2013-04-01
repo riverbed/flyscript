@@ -120,15 +120,17 @@ Windows
    Python 3.  Download the installer for your platform (32bit
    vs. 64bit).
 
-2. Download a copy of the flyscript tar file.
+2. Install [Python Setuptools](https://pypi.python.org/pypi/setuptools).
+
+3. Download a copy of the flyscript tar file.
    The tar file will be named "flyscript-&lt;version&gt;.tar.gz".  The rest of 
    these instructions will assume version 0.5.
 
-3. Double click on the FlyScript package to extract the contents.
+4. Double click on the FlyScript package to extract the contents.
    Select a suitable location such as "C:\".  This will extract the
    package contents to "C:\flyscript-0.5\"
 
-4. Create a virtual environment.  This will be the location where a
+5. Create a virtual environment.  This will be the location where a
    private copy of all the necessary packages are installed.  Note
    that this step requires access to the internet and the virtualenv
    package to have been installed.  Open a command
@@ -152,7 +154,7 @@ Windows
         Processing dependencies for flyscript==0.5
         Finished processing dependencies for flyscript==0.5
 
-6. At this point, you should be able to run the examples included in
+7. At this point, you should be able to run the examples included in
    the FlyScript package.  Run the about.py script as a simple test:
 
         :::text
@@ -228,7 +230,7 @@ Follow steps 1-3 above as for [Linux/Mac VirtualEnv Installation](#installvenv-l
         Processing dependencies for flyscript==0.5
         Finished processing dependencies for flyscript==0.5
 
-6. Test your installation by running a simple test (note, you may have to refresh
+5. Test your installation by running a simple test (note, you may have to refresh
    your path with `rehash` if the command is not found):
 
         :::text
@@ -255,11 +257,13 @@ Follow steps 1-3 above as for [Windows VirtualEnv Installation](#installvenv-win
 
 1. Download and install Python 2.6.x or 2.7.x.
 
-2. Download a copy of the flyscript tar file.
+2. Install [Python Setuptools](https://pypi.python.org/pypi/setuptools].
 
-3. Double click on the FlyScript package to extract the contents.
+3. Download a copy of the flyscript tar file.
 
-6. Install the FlyScript package using the system python.  Open a
+4. Double click on the FlyScript package to extract the contents.
+
+5. Install the FlyScript package using the system python.  Open a
    command prompt and type the following commands:
 
         :::text
