@@ -15,8 +15,8 @@ Dependencies
 
 * Python version 2.6.X or 2.7.X
     * Download latest from [here](http://python.org/download/)
-* (optional) virtualenv
-    * Download latest from [here](http://www.virtualenv.org/en/latest/)
+* Python setuptools
+    * Download latest from [here](https://pypi.python.org/pypi/setuptools)
 
 
 <a id="quickstart"></a>
@@ -24,37 +24,24 @@ Dependencies
 Quick Start
 ===========
 
-## Recommended approach - using virtualenv
+## Online Installation
 
-The recommended approach will install FlyScript inside of a virtualenv
-to help isolate it from other dependencies on your system and also
-allow it to be used without root permissions.
-
-Install [virtualenv](http://www.virtualenv.org/en/latest/)
-
-Create new environment: 
+Install pip, then install flyscript from python package index:
 
     :::text
-    $ virtualenv flyscript
-
-
-Install flyscript package inside new virtual environemnt:
-
-    :::text
-    (flyscript)$ pip install flyscript
+    $ easy_install pip
+    $ pip install flyscript
 
 Start coding!  
 
-## Alternate approach - download package
+## Alternate approach - offline installation
 
 The latest version of FlyScript can also be downloaded from either
 GitHub or Riverbed's Splash page.  This way the SDK can be installed
 offline for enviroments that may not have ready internet access.
 
-#### Install virtualenv
-(Optional) Before installing the SDK using either approach below,
-download and install the virtualenv package using the instructions
-from here: [http://www.virtualenv.org/en/latest/](http://www.virtualenv.org/en/latest/)
+Once the depenencies are downloaded (python and setuptools) grab the SDK from
+one of the following locations:
 
 #### GitHub
 
@@ -85,47 +72,38 @@ Start coding!
 Directory Layout
 ================
 
-The SDK tarball has the following directories included:
+After installation, flyscript package will be available to use in Python via `import rvbd`. 
+Examples and documentation are also installed, but may be in different locations depending on
+your specific environment.  Typical locations for each operating system are as follows:
 
-* `flyscript-0.5/docs` - this documentation
 
-* `flyscript-0.5/examples` - list of simple examples that demonstrate basic concepts
-    * shark - examples for interacting with Cascade Shark appliance
-    * profiler - examples for communication with Cascade Profiler
+ OS         |  Documentation                                                                   |  Scripts               
+ ---------- |:--------------------------------------------------------------------------------:|:-----------------------:
+ *Linux*    |  `/usr/local/share/doc/flyscript`                                                |  `/usr/local/bin`      
+ *Mac*      |  `/System/Library/Frameworks/Python.framework/Versions/2.7/share/doc/flyscript`  |  `/usr/local/bin`      
+ *Windows*  |  `C:\Python27\share\doc`                                                         |  `C:\Python27\Scripts` 
 
-* `flyscript-0.5/rvbd` - root of all python code
-    * `common` - modules common across all products
-    * `extras` - misc modules or utilities
-    * `pilot/profiler/shark` - modules specific to a given product
 
-After installation, the examples scripts will be included in your local bin 
-directory, and the docs included along with the source files.
 
 
 Upgrade and Uninstalling
 ========================
 
-Virtual Environment
--------------------
+If you need to upgrade the FlyScript package to a newer version, and you are
+offline, simply repeat the above installation steps.  This will install the
+latest version alongside the older version.  Normally you do not need to delete
+the older version.
 
-If you are using a virtual environment, there is no reason to upgrade, you simply delete
-the old environment and repeat the installation procedure.  (Be sure to move out any
-files you created or modified before deleting the old environment though!)
+With internet access, flyscript updates are as simple as:
 
-At any time you can simply uninstall this by deleting the entire
-subdirectory ~/myflyscript (or c:\myflyscript on windows).
+        :::text
+        > pip install -U flyscript
 
+(note the '-U' for upgrade).
 
-System Installation
--------------------
-
-If you need to upgrade the FlyScript package to a newer version, simply repeat the above installation 
-steps.  This will install the latest version alongside the older version.  Normally you do not
-need to delete the older version.
-
-If you need to completely uninstall the FlyScript package, you must first find complete installation
-directory.  You can get this directory from the about.py command (shown above), or you can 
-run python:
+If you need to completely uninstall the FlyScript package, you must first find
+complete installation directory.  You can get this directory from the flyscript-about.py
+command (shown above), or you can run python:
 
     :::text
     $ python
