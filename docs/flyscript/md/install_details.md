@@ -177,8 +177,8 @@ the older version.
 
 With internet access, flyscript updates are as simple as:
 
-        :::text
-        > pip install -U flyscript
+    :::text
+    > pip install -U flyscript
 
 (note the '-U' for upgrade).
 
