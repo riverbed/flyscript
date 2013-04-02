@@ -201,7 +201,7 @@ class Job4(_interfaces._InputSource):
     def size_on_disk(self):
         """The capture job actual size, corresponding to the one shown by the
         Shark UI shows."""
-        return self.data['status']['packet_size']
+        return self.data.status.packet_size
 
     @property
     def size_limit(self):
@@ -223,7 +223,7 @@ class Job4(_interfaces._InputSource):
         source for this job."""
         interfaces = Interface4.get_all(self.shark)
         for interface in interfaces:
-            if self.data.config.interface_description == interface.name:
+            if self.data.config.interface_name == interface.name:
                 return interface
         ValueError('{0} interface not found'.format(self.data.config.interface_description))
 

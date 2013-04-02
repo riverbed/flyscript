@@ -509,7 +509,14 @@ class SharkTests(unittest.TestCase):
         self.assertEqual(job.size_limit, packet_total_size * 20/100)
         self.assertTrue(job.data.config.indexing.size_limit < 1.7*1024**3)
         self.assertTrue(job.data.config.indexing.size_limit > 1.6*1024**3)
+        self.assertEqual(job.interface.name, interface.name)
+        self.assertEqual(job.get_state(), 'RUNNING')
+        # TODO add some equality checks to these
+        self.assertTrue(job.get_stats())
+        self.assertTrue(job.get_index_info())
+
         job.delete()
+
         job = self.shark.create_job(interface, 'test_create_job_with_parameters', '20%', indexing_size_limit='10%',
                                     packet_retention_time_limit=datetime.timedelta(days=7), start_immediately=True)
         self.assertEqual(job.size_limit, packet_total_size * 20/100)
