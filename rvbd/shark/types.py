@@ -25,7 +25,7 @@ class Operation(object):
                
 class Field(object):
     def __init__(self, field, operation=Operation.sum, autogen=False,
-                 key=False, description=None):
+                 key=False, description=None, default_value=None):
 
         #do str(field) because field can be a Field instance itself.
         field_string = str(field).replace('::', '.')
@@ -35,6 +35,7 @@ class Field(object):
         self.autogen = autogen
         self.key = key
         self.description = description
+        self.default_value = default_value
             
     def __str__(self):
         return self.field_string
@@ -42,13 +43,13 @@ class Field(object):
 class Key(Field):
     """This class can be used to identify a fields as a key in a view
     """
-    def __init__(self, field, description=None):
+    def __init__(self, field, description=None, default_value=None):
         super(Key, self).__init__(field, key=True, operation=Operation.none,
-                                  description=description)
+                                  description=description, default_value=default_value)
         
 class Value(Field):
     """This class can be used to identify a fields as a value in a view
     """
-    def __init__(self, field, operation=Operation.sum, description=None):
+    def __init__(self, field, operation=Operation.sum, description=None, default_value=None):
         super(Value, self).__init__(field, operation=operation,
-                                    description=description)
+                                    description=description, default_value=default_value)

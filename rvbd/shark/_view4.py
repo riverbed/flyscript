@@ -148,6 +148,8 @@ class View4(_interfaces.View):
             value = dict([('field', str(column)), ('id', 'c'+str(i))])
             if key == 'metrics':
                 value['operation'] = column.operation
+            if column.default_value is not None:
+                value['default_value'] = column.default_value
             res[key].append(value)
         res['id'] = 'Flyscript_Processor'
         res['outputs'] = [dict(fields=list(dict(id='c'+str(i)) for i in range(len(columns))),
