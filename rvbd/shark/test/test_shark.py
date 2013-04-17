@@ -83,7 +83,17 @@ def create_shark():
         password = 'admin'
 
     auth = UserAuth(username, password)
-    return Shark(config['sharkhost'], auth=auth)
+    
+    try:
+        port = config['sharkport']
+    except KeyError:
+        port = None
+  
+    if port:
+        sk = Shark(config['sharkhost'], port=port, auth=auth)
+    else:
+        sk = Shark(config['sharkhost'], auth=auth)
+    return sk
 
 
 def setup_defaults():
