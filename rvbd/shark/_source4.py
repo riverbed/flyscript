@@ -155,7 +155,7 @@ class Clip4(_interfaces.Clip):
         """
         pass
 
-class Job4(_interfaces._InputSource):
+class Job4(_interfaces.Job):
     """A capture job packet source. These objects are normally not
     instantiated directly, but are instead obtained by calling
     `Shark.get_capture_jobs` or `Shark.get_capture_job_by_name`.
