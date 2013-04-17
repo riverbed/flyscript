@@ -302,7 +302,7 @@ class Job4(_interfaces.Job):
         if requested_stop_time:
             requested_stop_time = requested_stop_time.strftime(cls._timefmt)
 
-        jobrequest = { 'interface_name': str(interface) }
+        jobrequest = { 'interface_name': interface.id }
 
         if name:
             jobrequest['name'] = name
