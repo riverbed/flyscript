@@ -13,6 +13,7 @@ from rvbd.shark import _interfaces
 from rvbd.shark._interfaces import loaded
 from rvbd.shark._exceptions import SharkException
 from rvbd.common import utils, timeutils
+import os
 
 class Interface4(_interfaces._InputSource):
     """A physical interface packet source, that can be used for live packet
@@ -394,10 +395,13 @@ class Job4(_interfaces.Job):
         """
         return Clip4.add(self.shark, self, filters, description, locked)
 
-    def export(self, filename, filters=None):
+    def export(self, path, filters=None):
         """Export the CaptureJob packets selected by filters to a file
         """
-        raise UnimplementedEror()
+        dir, filename = os.path.split(path)
+        if filename == '':
+            filename = None
+        data = self.shark.api.jobs.get_packets(self.id, dir=dir, filename=filename)
 
     def get_state(self):
         """Return the state of the job (e.g. RUNNING, STOPPED)"""

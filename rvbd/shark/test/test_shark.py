@@ -586,6 +586,18 @@ class SharkTests(unittest.TestCase):
         pe.disable()
         pe.remove_profiler('tm08-1.lab.nbttech.com')
 
+    def test_job_export(self):
+        shark = self.shark
+        interface = shark.get_interfaces()[0]
+        with self.shark.create_job(interface, \
+                                   'test_job_export', '20%', \
+                                   indexing_size_limit='1.7GB', \
+                                   start_immediately=True) as job:
+            time.sleep(10)
+            job.export('/tmp/test_job_export')
+            job.export('/tmp/')
+            
+
 
 class SharkLiveViewTests(unittest.TestCase):
     def setUp(self):
