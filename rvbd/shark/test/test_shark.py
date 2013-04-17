@@ -115,7 +115,7 @@ def setup_capture_job(shark):
         job = shark.get_capture_job_by_name('Flyscript-tests-job')
     except ValueError:
         #let's create a capture job
-        interface = shark.get_interface_by_name('mon0')
+        interface = shark.get_interfaces()[0]
         job = shark.create_job(interface, 'Flyscript-tests-job', '40%', indexing_size_limit='2GB',
                                start_immediately=True)
 
@@ -533,6 +533,14 @@ class SharkTests(unittest.TestCase):
         self.assertTrue(job.data.config.indexing.size_limit < index_total_size * 11/100)
         self.assertTrue(job.data.config.indexing.size_limit > index_total_size * 9/100)
         job.delete()
+        
+        #test contextual manager
+        with self.shark.create_job(interface, \
+                                       'test_create_job_with_parameters', '20%', \
+                                       indexing_size_limit='1.7GB', \
+                                       start_immediately=True) as job:
+            pass
+        
         #TODO: test other job parameters
 
     def test_directory_list(self):
