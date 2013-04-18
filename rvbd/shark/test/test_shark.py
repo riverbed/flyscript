@@ -612,6 +612,12 @@ class SharkTests(unittest.TestCase):
         os.remove(f.name)
             
 
+    def test_log_download(self):
+        shark = self.shark
+        f = shark.download_log()
+        self.assertTrue(os.path.exists(f))
+        os.remove(f)
+
 
 class SharkLiveViewTests(unittest.TestCase):
     def setUp(self):

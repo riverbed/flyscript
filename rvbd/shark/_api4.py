@@ -664,6 +664,11 @@ class System(API4Group):
     def get_events(self, as_json=True, timestamp_format=APITimestampFormat.NANOSECOND):
         """Return the events list"""
         return self._xjtrans("/debug/events", "GET", None, as_json, timestamp_format)
+    
+    def get_sysdump(self, path, config, as_json=True, timestap_format=APITimestampFormat.NANOSECOND):
+        """Dump log archive
+        """
+        return self.shark.conn.download(self.uri_prefix + "/system/sysdump", path, params=config)
 
 class Certificates(API4Group):
     
