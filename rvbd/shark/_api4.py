@@ -205,13 +205,13 @@ class Interfaces(API4Group):
         """ Return details for a specific export """
         return self._xjtrans("/interfaces/%s/exports/%s" % (handle, export_id), "GET", None, as_json, timestamp_format)
 
-    def get_packets_from_export(self, handle, export_id, dirpath, filename=None):
+    def get_packets_from_export(self, handle, export_id, path=None):
         """ Fetch packets from export ID """
-        return self.shark.conn.get_raw(self.uri_prefix + "/interfaces/%s/exports/%s/packets" % (handle, export_id), dirpath, local_file_name=filename)
+        return self.shark.conn.download(self.uri_prefix + "/interfaces/%s/exports/%s/packets" % (handle, export_id), path)
     
-    def get_packets(self, handle, dirpath, filename=None, params=None):
+    def get_packets(self, handle, path=None, params=None):
         """ Directly fetch packets for this interface, with optional parameters """
-        return self.shark.conn.get_raw(self.uri_prefix + "/interfaces/%s/packets" % handle, dirpath, local_file_name=filename, params=params)
+        return self.shark.conn.download(self.uri_prefix + "/interfaces/%s/packets" % handle, path, params=params)
 
     def delete_export(self, handle, export_id):
         """ Delete an export """
@@ -255,13 +255,13 @@ class Jobs(API4Group):
         """ Delete an export """
         return self._xjtrans("/jobs/%s/exports/%s" % (handle, export_id), "DELETE", None, True, APITimestampFormat.NANOSECOND)
 
-    def get_packets_from_export(self, handle, export_id, dir, filename=None):
+    def get_packets_from_export(self, handle, export_id, path=None):
         """ Fetch packets from export ID """
-        return self.shark.conn.get_raw(self.uri_prefix + "/jobs/%s/exports/%s/packets" % (handle, export_id), dir, local_file_name=filename)
+        return self.shark.conn.download(self.uri_prefix + "/jobs/%s/exports/%s/packets" % (handle, export_id), path)
 
-    def get_packets(self, handle, dir, filename=None, params=None):
+    def get_packets(self, handle, path=None, params=None):
         """ Directly fetch packets for this job, with optional parameters """
-        return self.shark.conn.get_raw(self.uri_prefix + "/jobs/%s/packets" % handle, dir, local_file_name=filename, params=params)
+        return self.shark.conn.download(self.uri_prefix + "/jobs/%s/packets" % handle, path, params=params)
 
     def state_update(self, handle, config, as_json=True, timestamp_format=APITimestampFormat.NANOSECOND):
         """ Updates the capture jobs status """
@@ -324,13 +324,13 @@ class Clips(API4Group):
         """ Delete an export """
         return self._xjtrans("/clips/%s/exports/%s" % (handle, export_id), "DELETE", None, True, APITimestampFormat.NANOSECOND)
 
-    def get_packets_from_export(self, handle, export_id, dir, filename=None):
+    def get_packets_from_export(self, handle, export_id, path=None):
         """ Fetch packets from export ID """
-        return self.shark.conn.get_raw(self.uri_prefix + "/clips/%s/exports/%s/packets" % (handle, export_id), dir, local_file_name=filename)
+        return self.shark.conn.download(self.uri_prefix + "/clips/%s/exports/%s/packets" % (handle, export_id), path)
 
-    def get_packets(self, handle, dir, filename=None, params=None):
+    def get_packets(self, handle, path=None, params=None):
         """ Directly fetch packets from this clip, with optional parameters """
-        return self.shark.conn.get_raw(self.uri_prefix + "/clips/%s/packets" % handle, dir, local_file_name=filename, params=params)
+        return self.shark.conn.download(self.uri_prefix + "/clips/%s/packets" % handle, path, params=params)
         
     def get_config(self, handle, as_json=True, timestamp_format=APITimestampFormat.NANOSECOND):
         """ Retrieves configuration information about a trace clip """
@@ -402,11 +402,11 @@ class Files(API4Group):
             path = path[1:]
         return self.shark.conn.post_raw(self.uri_prefix + "/fs/%s" % path, local_file_ref, extra_headers=headers)
     
-    def download(self, path, local_path, local_file_name = None):
+    def download(self, path, local_path=None):
         """Convenience function to download a file."""
         if path[0] == '/':
             path = path[1:]
-        return self.shark.conn.get_raw(self.uri_prefix + "/fs/%s/download" % path, local_path, local_file_name )
+        return self.shark.conn.download(self.uri_prefix + "/fs/%s/download" % path, path=local_path)
         
     def delete(self, path):
         """Delete a file from the system."""
@@ -504,17 +504,17 @@ class Files(API4Group):
             path = path[1:]
         return self._xjtrans("/fs/%s/exports/%s" % (path, export_id), "DELETE", None, True, APITimestampFormat.NANOSECOND)
 
-    def get_packets_from_export(self, path, export_id, dir, filename=None):
+    def get_packets_from_export(self, path, export_id, local_path=None):
         """ Fetch packets from export ID """
         if path[0] == '/':
             path = path[1:]
-        return self.shark.conn.get_raw(self.uri_prefix + "/fs/%s/exports/%s/packets" % (path, export_id), dir, local_file_name=filename)
+        return self.shark.conn.download(self.uri_prefix + "/fs/%s/exports/%s/packets" % (path, export_id), local_path)
 
-    def get_packets(self, path, dir, filename=None,  params=None):
+    def get_packets(self, path, local_path=None,  params=None):
         """ Directly fetch packets from file on server, with optional parameters """
         if path[0] == '/':
             path = path[1:]
-        return self.shark.conn.get_raw(self.uri_prefix + "/fs/%s/packets" % path, dir, local_file_name=filename, params=params)
+        return self.shark.conn.download(self.uri_prefix + "/fs/%s/packets" % path, local_path, params=params)
         
 class Users(API4Group):
     def get_all(self, as_json=True, timestamp_format=APITimestampFormat.NANOSECOND):

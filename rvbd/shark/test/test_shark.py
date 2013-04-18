@@ -594,8 +594,22 @@ class SharkTests(unittest.TestCase):
                                    indexing_size_limit='1.7GB', \
                                    start_immediately=True) as job:
             time.sleep(10)
-            job.export('/tmp/test_job_export')
-            job.export('/tmp/')
+            job.download('/tmp/test_job_export')
+            job.download('/tmp/')
+            f = job.download()
+            f.close()
+            for x in [f.name, '/tmp/test_job_export', '/tmp/trace.pcap']:
+                self.assertTrue(os.path.exists(x))
+                os.remove(x)
+    
+    def test_clip_export(self):
+        shark = self.shark
+        job = shark.get_capture_jobs()[0]
+        clip = create_trace_clip(shark, job)
+        f = clip.download()
+        f.close()
+        self.assertTrue(os.path.exists(f.name))
+        os.remove(f.name)
             
 
 

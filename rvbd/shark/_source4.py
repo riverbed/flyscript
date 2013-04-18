@@ -13,7 +13,7 @@ from rvbd.shark import _interfaces
 from rvbd.shark._interfaces import loaded
 from rvbd.shark._exceptions import SharkException
 from rvbd.common import utils, timeutils
-import os
+
 
 class Interface4(_interfaces._InputSource):
     """A physical interface packet source, that can be used for live packet
@@ -75,12 +75,6 @@ class Clip4(_interfaces.Clip):
     
     def _load(self):
         self.data = self.shark.api.clips.get_details(self.id)
-
-
-    # XXX version 3 clip has stuff this doesn't have:
-    #  - timerange property
-    #  - export() method
-    #  - get_job() method
 
     @property
     def source_path(self):
@@ -155,6 +149,13 @@ class Clip4(_interfaces.Clip):
         """Set or retrieve locked state of a clip
         """
         pass
+
+    def download(self, path=None):
+        """Download the Clip packets to a file.
+        If path is None packets will be exported to a temporary file.
+        A file object that contains the packets is returned.
+        """
+        return open(self.shark.api.clips.get_packets(self.id, path), 'rb')
 
 class Job4(_interfaces.Job):
     """A capture job packet source. These objects are normally not
@@ -395,14 +396,13 @@ class Job4(_interfaces.Job):
         """
         return Clip4.add(self.shark, self, filters, description, locked)
 
-    def export(self, path, filters=None):
-        """Export the CaptureJob packets selected by filters to a file
+    def download(self, path=None):
+        """Download the Job packets to a path.
+        If path is None packets will be exported to a temporary file.
+        A file object that contains the packets is returned.
         """
-        dir, filename = os.path.split(path)
-        if filename == '':
-            filename = None
-        data = self.shark.api.jobs.get_packets(self.id, dir=dir, filename=filename)
-
+        return open(self.shark.api.jobs.get_packets(self.id, path), 'rb')
+        
     def get_state(self):
         """Return the state of the job (e.g. RUNNING, STOPPED)"""
         return self.get_status().state
