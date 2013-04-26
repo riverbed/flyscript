@@ -594,13 +594,21 @@ class SharkTests(unittest.TestCase):
                                    indexing_size_limit='1.7GB', \
                                    start_immediately=True) as job:
             time.sleep(10)
+            for x in ['/tmp/test_job_export', '/tmp/trace.pcap']:
+                try:
+                    os.remove(x)
+                except:
+                    pass
             job.download('/tmp/test_job_export')
             job.download('/tmp/')
             f = job.download()
             f.close()
-            for x in [f.name, '/tmp/test_job_export', '/tmp/trace.pcap']:
+            for x in ['/tmp/test_job_export', '/tmp/trace.pcap']:
                 self.assertTrue(os.path.exists(x))
                 os.remove(x)
+            #remove tempdir for f.name
+            tempdir = os.path.split(f.name)[0]
+            shutil.rmtree(tempdir)
     
     def test_clip_export(self):
         shark = self.shark
