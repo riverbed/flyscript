@@ -13,6 +13,7 @@ from rvbd.profiler.filters import TimeFilter
 
 import sys
 import optparse
+import cStringIO as StringIO
 
 # suppress warnings from pandas 0.11
 import warnings
@@ -33,13 +34,27 @@ class WANReportApp(ProfilerApp):
         group.add_option('--wan-address', dest='wan_address', default=None,
                          help='WAN interface address')
 
+        group = optparse.OptionGroup(parser, "Filter Options")
+        group.add_option('--timefilter', dest='timefilter', default='last 1 hour',
+                         help='Time range to analyze (defaults to "last 1 hour")')
+        parser.add_option_group(group)
+
+        group = optparse.OptionGroup(parser, "Report Type Options (choose one)")
         group.add_option('--summary', dest='summary', default=False, action='store_true',
                          help='Generate Summary report of WAN address')
         group.add_option('--time-series', dest='time_series', default=False, action='store_true',
                          help='Generate Time Series report of WAN address')
+        parser.add_option_group(group)
 
-        group.add_option('--timefilter', dest='timefilter', default='last 1 hour', 
-                         help='Time range to analyze (defaults to "last 1 hour")')
+        group = optparse.OptionGroup(parser, "Output options")
+        group.add_option('--inbound', dest='out_inbound', default=False, action='store_true',
+                         help='Print inbound statistics')
+        group.add_option('--outbound', dest='out_outbound', default=False, action='store_true',
+                         help='Print outbound statistics')
+        group.add_option('--combined', dest='out_combined', default=False, action='store_true',
+                         help='Print combined inbound/outbound statistics')
+        group.add_option('--csv', dest='as_csv', default=False, action='store_true',
+                         help='Return values in CSV format instead of tabular')
 
         parser.add_option_group(group)
 
@@ -55,6 +70,21 @@ class WANReportApp(ProfilerApp):
                                 'both lan-address and wan-address required')
         elif not self.options.summary and not self.options.time_series:
             self.optparse.error('Either summary or time_series option required')
+        elif not any([self.options.out_inbound,
+                      self.options.out_outbound,
+                      self.options.out_combined]):
+            self.optparse.error('Choose at least one output option: '
+                                '--inbound, --outbound, --combined')
+
+
+    def print_data(self, data, header):
+        if self.options.as_csv:
+            f = StringIO.StringIO()
+            data.to_csv(f, header=True)
+            print f.getvalue()
+        else:
+            print header
+            print data
 
     def main(self):
         self.ip_address = None
@@ -64,8 +94,8 @@ class WANReportApp(ProfilerApp):
 
         if self.options.wan_address and self.options.lan_address:
             self.ip_address = self.options.wan_address.split(':')[0]
-            self.lan_address = self.options.lan_address
-            self.wan_address = self.options.wan_address
+            self.lan_address = [self.options.lan_address]
+            self.wan_address = [self.options.wan_address]
         elif self.options.device_name:
             name = self.options.device_name
             devices = self.profiler.api.devices.get_all()
@@ -77,6 +107,8 @@ class WANReportApp(ProfilerApp):
                 print 'Device %s cannot be found in Profiler device list' % name
                 print 'Try specifying the name differently or use an IP address'
                 sys.exit(1)
+        else:
+            self.ip_address = self.options.device_address
 
         if self.options.summary:
             self.columns = ['device',
@@ -84,8 +116,8 @@ class WANReportApp(ProfilerApp):
                             'total_bytes']
             self.groupby = 'dev'
             ReportClass = WANSummaryReport
-
-        elif self.options.time_series:
+        else:
+            # Time Series report
             self.columns = ['time',
                             'avg_bytes',
                             'total_bytes']
@@ -97,27 +129,30 @@ class WANReportApp(ProfilerApp):
                 # query for the interfaces
                 self.lan_address, self.wan_address = report.get_interfaces(self.ip_address)
 
-            print self.lan_address
-            print self.wan_address
+            if self.options.out_inbound or self.options.out_combined:
+                # inbound
+                report.run(self.lan_address, self.wan_address, 'inbound', columns=self.columns,
+                           groupby=self.groupby, timefilter=self.timefilter, resolution='auto')
+                inbound = report.get_data(as_list=False)
 
-            # inbound
-            report.run(self.lan_address, self.wan_address, 'inbound', columns=self.columns,
-                       groupby=self.groupby, timefilter=self.timefilter, resolution='auto')
-            inbound = report.get_data(as_list=False)
+                if self.options.out_inbound:
+                    header = 'Inbound traffic:'
+                    self.print_data(inbound, header)
 
-            print 'inbound'
-            print inbound
+            if self.options.out_outbound or self.options.out_combined:
+                # outbound
+                report.run(self.lan_address, self.wan_address, 'outbound', columns=self.columns,
+                           groupby=self.groupby, timefilter=self.timefilter, resolution='auto')
+                outbound = report.get_data(as_list=False)
 
-            # outbound
-            report.run(self.lan_address, self.wan_address, 'outbound', columns=self.columns,
-                       groupby=self.groupby, timefilter=self.timefilter, resolution='auto')
-            outbound = report.get_data(as_list=False)
+                if self.options.out_outbound:
+                    header = 'Outbound traffic:'
+                    self.print_data(outbound, header)
 
-            print 'outbound'
-            print outbound
-
-            total = inbound + outbound
-            print total
+            if self.options.out_combined:
+                header = 'Combined Inbound/Outbound traffic:'
+                total = inbound + outbound
+                self.print_data(total, header)
 
 
 if __name__ == '__main__':
