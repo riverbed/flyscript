@@ -169,3 +169,10 @@ class File(_InputSource):
         """Can be used to determine if a source object is live or offline.
         The result is always False for a File."""
         return False
+
+class Job(_InputSource):
+    def __enter__(self):
+        return self
+
+    def __exit__(self, _type, value, traceback):
+        self.delete()

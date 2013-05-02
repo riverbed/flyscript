@@ -83,7 +83,17 @@ def create_shark():
         password = 'admin'
 
     auth = UserAuth(username, password)
-    return Shark(config['sharkhost'], auth=auth)
+    
+    try:
+        port = config['sharkport']
+    except KeyError:
+        port = None
+  
+    if port:
+        sk = Shark(config['sharkhost'], port=port, auth=auth)
+    else:
+        sk = Shark(config['sharkhost'], auth=auth)
+    return sk
 
 
 def setup_defaults():
@@ -105,7 +115,7 @@ def setup_capture_job(shark):
         job = shark.get_capture_job_by_name('Flyscript-tests-job')
     except ValueError:
         #let's create a capture job
-        interface = shark.get_interface_by_name('mon0')
+        interface = shark.get_interfaces()[0]
         job = shark.create_job(interface, 'Flyscript-tests-job', '40%', indexing_size_limit='2GB',
                                start_immediately=True)
 
@@ -523,6 +533,14 @@ class SharkTests(unittest.TestCase):
         self.assertTrue(job.data.config.indexing.size_limit < index_total_size * 11/100)
         self.assertTrue(job.data.config.indexing.size_limit > index_total_size * 9/100)
         job.delete()
+        
+        #test contextual manager
+        with self.shark.create_job(interface, \
+                                       'test_create_job_with_parameters', '20%', \
+                                       indexing_size_limit='1.7GB', \
+                                       start_immediately=True) as job:
+            pass
+        
         #TODO: test other job parameters
 
     def test_directory_list(self):
@@ -567,6 +585,46 @@ class SharkTests(unittest.TestCase):
         pe.enable()
         pe.disable()
         pe.remove_profiler('tm08-1.lab.nbttech.com')
+
+    def test_job_export(self):
+        shark = self.shark
+        interface = shark.get_interfaces()[0]
+        with self.shark.create_job(interface, \
+                                   'test_job_export', '20%', \
+                                   indexing_size_limit='1.7GB', \
+                                   start_immediately=True) as job:
+            time.sleep(10)
+            for x in ['/tmp/test_job_export', '/tmp/trace.pcap']:
+                try:
+                    os.remove(x)
+                except:
+                    pass
+            job.download('/tmp/test_job_export')
+            job.download('/tmp/')
+            f = job.download()
+            f.close()
+            for x in ['/tmp/test_job_export', '/tmp/trace.pcap']:
+                self.assertTrue(os.path.exists(x))
+                os.remove(x)
+            #remove tempdir for f.name
+            tempdir = os.path.split(f.name)[0]
+            shutil.rmtree(tempdir)
+    
+    def test_clip_export(self):
+        shark = self.shark
+        job = shark.get_capture_jobs()[0]
+        clip = create_trace_clip(shark, job)
+        f = clip.download()
+        f.close()
+        self.assertTrue(os.path.exists(f.name))
+        os.remove(f.name)
+            
+
+    def test_log_download(self):
+        shark = self.shark
+        f = shark.download_log()
+        self.assertTrue(os.path.exists(f))
+        os.remove(f)
 
 
 class SharkLiveViewTests(unittest.TestCase):

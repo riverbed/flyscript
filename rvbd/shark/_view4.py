@@ -40,9 +40,9 @@ def _to_native(string, legend_entry):
         return float(string) / denominator
 
     if legend_entry.type == 'BOOLEAN':
-        if string.lower() == 'false':
+        if string.lower() == 'false' or string.lower() == '0':
             return False
-        elif string.lower() == 'true':
+        elif string.lower() == 'true' or string.lower() == '1':
             return True
         else:
             raise ValueError('%s is not a boolean' % string)
@@ -50,7 +50,10 @@ def _to_native(string, legend_entry):
     if legend_entry.type == 'ABSOLUTE_TIME':
         return timeutils.nsec_string_to_datetime(string)
     
-    # XXX RELATIVE_TIME -> timedelta
+    if legend_entry.type == 'RELATIVE_TIME':
+        # consider it an integer for now
+        return int(string)
+
     # XXX anything with IPv4 or ETHER?
 
     return string

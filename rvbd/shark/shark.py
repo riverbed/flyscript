@@ -588,3 +588,20 @@ class Shark(Service):
         Return Value: a reference to the new file
         """
         return self.classes.MergedFile.create_merged_file(self, path, files)
+    
+    def download_log(self, path=None, log_type='COMPLETE', case_id=None):
+        """Download log archive to local machine into path
+        If path is None a temporary file is created
+        
+        `log_type` can be:
+            -'CURRENT'
+            -'PROBE'
+            -'PACKETRECORDER'
+            -'COMPLETE' (default)
+        
+        `case_id` is an integer that represent the case id
+        """
+        config = {'dump_type': log_type}
+        if case_id:
+            config['case_id'] = int(case_id)
+        return self.api.system.get_sysdump(path, config)
