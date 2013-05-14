@@ -46,7 +46,7 @@ logger = logging.getLogger(__name__)
 try:
     loglevel = config['loglevel']
 except KeyError:
-    loglevel = logging.INFO
+    loglevel = logging.DEBUG
 
 logging.basicConfig(format="%(asctime)s [%(levelname)-5.5s] %(msg)s",
                     level=loglevel)
@@ -165,9 +165,9 @@ def cleanup_shark(shark):
     for v in shark.api.view.get_all():
         shark.api.view.close(v.id)
 
-    for j in shark.api.jobs.get_all():
-        if j['config']['name'] != 'Flyscript-tests-job':
-            shark.api.jobs.delete(j.id)
+#    for j in shark.api.jobs.get_all():
+#        if j['config']['name'] != 'Flyscript-tests-job':
+#            shark.api.jobs.delete(j.id)
 
     for c in shark.api.clips.get_all():
         shark.api.clips.delete(c.id)
