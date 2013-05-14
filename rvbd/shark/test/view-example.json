@@ -1,7 +1,7 @@
 {
 	"info": {
 		"description": "Conversations among IP hosts",
-		"title": "IP Conversations"
+		"title": "test_IP Conversations"
 	},
 	"processors": [
 		{

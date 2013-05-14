@@ -116,7 +116,7 @@ def setup_capture_job(shark):
     except ValueError:
         #let's create a capture job
         interface = shark.get_interfaces()[0]
-        job = shark.create_job(interface, 'Flyscript-tests-job', '40%', indexing_size_limit='2GB',
+        job = shark.create_job(interface, 'Flyscript-tests-job', '20%', indexing_size_limit='2GB',
                                start_immediately=True)
 
     logger.info('using capture job %r' % job)
@@ -126,7 +126,7 @@ def setup_capture_job(shark):
 def create_trace_clip(shark, job):
     # create a relatively short trace clip that we can use later
     fltr = TimeFilter.parse_range('last 10 minutes')
-    clip = shark.create_clip(job, [fltr], 'test')
+    clip = shark.create_clip(job, [fltr], 'test_clip')
     logger.info('created test trace clip')
     return clip
 
@@ -148,29 +148,23 @@ def create_tracefile(shark):
 def cleanup_shark(shark):
     """Does proper cleanup of the shark appliance from views, jobs and clips
 
-    - views
-    created without context manager and not closed, including
-    views from failed tests that are not automatically closed if they
-    do not use context manager
-
-    - jobs
-    Delete all jobs except the first one which is supposed to be a running job
-    on mon0 by default
-
-    - clips
+    In each case, only items named with a prefix of 'test_' are removed.
     """
     # XXX investigate implementing this at end of all tests instead of
     #     after every test
 
     for v in shark.api.view.get_all():
-        shark.api.view.close(v.id)
+        config = shark.api.view.get_config(v['id'])
+        if 'info' in config and config['info']['title'].startswith('test_'):
+            shark.api.view.close(v.id)
 
-#    for j in shark.api.jobs.get_all():
-#        if j['config']['name'] != 'Flyscript-tests-job':
-#            shark.api.jobs.delete(j.id)
+    for j in shark.api.jobs.get_all():
+        if j['config']['name'].startswith('test_'):
+            shark.api.jobs.delete(j.id)
 
     for c in shark.api.clips.get_all():
-        shark.api.clips.delete(c.id)
+        if c['config']['description'].startswith('test_'):
+            shark.api.clips.delete(c.id)
 
 
 class SharkTests(unittest.TestCase):
@@ -209,7 +203,7 @@ class SharkTests(unittest.TestCase):
         columns, _ = setup_defaults()
         filters = None
 
-        with self.shark.create_view(interface, columns, filters, sync=True) as view:
+        with self.shark.create_view(interface, columns, filters, name='test_view_interface', sync=True) as view:
             progress = view.get_progress()
             data = view.get_data()
             ti = view.get_timeinfo()
@@ -224,7 +218,7 @@ class SharkTests(unittest.TestCase):
         job = setup_capture_job(self.shark)
         columns, filters = setup_defaults()
 
-        with self.shark.create_view(job, columns, None) as view:
+        with self.shark.create_view(job, columns, None, name='test_view_on_job') as view:
             data = view.get_data()
 
             self.assertTrue(len(data) > 0)
@@ -236,7 +230,7 @@ class SharkTests(unittest.TestCase):
         clip = create_trace_clip(self.shark, job)
         columns, filters = setup_defaults()
 
-        with self.shark.create_view(clip, columns, None) as view:
+        with self.shark.create_view(clip, columns, None, name='test_view_on_clip') as view:
             data = view.get_data()
 
             self.assertTrue(len(data) >= 0)
@@ -247,7 +241,7 @@ class SharkTests(unittest.TestCase):
         tracefile = create_tracefile(self.shark)
         columns, filters = setup_defaults()
 
-        with self.shark.create_view(tracefile, columns, None) as view:
+        with self.shark.create_view(tracefile, columns, None, name='test_view_on_file') as view:
             data = view.get_data()
 
             self.assertTrue(len(data) > 0)
@@ -259,7 +253,7 @@ class SharkTests(unittest.TestCase):
         job = setup_capture_job(self.shark)
         clip = create_trace_clip(self.shark, job)
         columns, filters = setup_defaults()
-        with self.shark.create_view(clip, columns, filters) as v:
+        with self.shark.create_view(clip, columns, filters, name='test_view_on_api') as v:
             legend = v.get_legend()
             for col in legend:
                 # make sure we have name and description attributes
@@ -293,7 +287,7 @@ class SharkTests(unittest.TestCase):
         clip = create_trace_clip(self.shark, job)
         columns, filters = setup_defaults()
         with self.shark.create_view(clip, columns, filters,
-                                    sync=False) as v:
+                                    sync=False, name='test_async_view') as v:
             while v.get_progress() < 100:
                 time.sleep(1)
 
@@ -302,7 +296,7 @@ class SharkTests(unittest.TestCase):
         job = self.shark.create_job(interface, 'test_create_clip', '300M')
         filters = [TimeFilter(datetime.datetime.now() - datetime.timedelta(1),
                               datetime.datetime.now())]
-        clip = self.shark.create_clip(job,  filters, description='test')
+        clip = self.shark.create_clip(job,  filters, description='test_clip')
         clip.delete()
         #lets create a clip from a job
         with job.add_clip(filters, 'test_add_clip') as clip:
@@ -570,7 +564,7 @@ class SharkTests(unittest.TestCase):
         fltr = (TimeFilter.parse_range("last 30 m"))
         interface = shark.get_interfaces()[0]
         job = self.shark.create_job(interface, 'test_loaded_decorator', '300M')
-        with shark.create_clip(job, [fltr], 'my_clip') as clip:
+        with shark.create_clip(job, [fltr], 'test_decorator_clip') as clip:
             #this will test the @loaded decorator
             clip.size
 
@@ -620,11 +614,11 @@ class SharkTests(unittest.TestCase):
         os.remove(f.name)
             
 
-    def test_log_download(self):
-        shark = self.shark
-        f = shark.download_log()
-        self.assertTrue(os.path.exists(f))
-        os.remove(f)
+#    def test_log_download(self):
+#        shark = self.shark
+#        f = shark.download_log()
+#        self.assertTrue(os.path.exists(f))
+#        os.remove(f)
 
 
 class SharkLiveViewTests(unittest.TestCase):
@@ -640,7 +634,7 @@ class SharkLiveViewTests(unittest.TestCase):
         clip = create_trace_clip(self.shark, job)
         interface = shark.get_interfaces()[0]
         columns, filters = setup_defaults()
-        with shark.create_view(clip, columns, None) as v:
+        with shark.create_view(clip, columns, None, name='test_live_view') as v:
             cursor = viewutils.Cursor(v.all_outputs()[0])
             data = cursor.get_data()
             time.sleep(3)
@@ -652,7 +646,7 @@ class SharkLiveViewTests(unittest.TestCase):
         s = self.shark
         columns, filters = setup_defaults()
         interface = s.get_interface_by_name('mon0')
-        view = s.create_view(interface, columns, None, sync=True)
+        view = s.create_view(interface, columns, None, name='test_live_view', sync=True)
 
         time.sleep(20)
         # 20 seconds delta
