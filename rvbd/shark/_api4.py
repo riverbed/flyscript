@@ -623,7 +623,7 @@ class Views(API4Group):
         return self._xjtrans("/debug/handles/%s" % handle, "GET", None, as_json, timestamp_format)
 
     def create_watch(self, handle, config, as_json=True, timestamp_format=APITimestampFormat.NANOSECOND):
-        """reate a new watch on the view"""
+        """Create a new watch on the view"""
         return self._xjtrans("/views/%s/watches" % handle, "POST", config, as_json, timestamp_format)
 
     def get_watches(self, handle, as_json=True, timestamp_format=APITimestampFormat.NANOSECOND):

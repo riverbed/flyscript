@@ -41,11 +41,12 @@ def _to_native(string, legend_entry):
 
     if legend_entry.type == 'BOOLEAN':
         if string.lower() == 'false' or string.lower() == '0':
-            return False
+            return 0
         elif string.lower() == 'true' or string.lower() == '1':
-            return True
+            return 1
         else:
-            raise ValueError('%s is not a boolean' % string)
+            # Booleans can be a count of successes
+            return int(string)
 
     if legend_entry.type == 'ABSOLUTE_TIME':
         return timeutils.nsec_string_to_datetime(string)
@@ -393,7 +394,8 @@ class Output4(_interfaces.Output):
             if 'vals' not in sample:
                 continue
 
-            sample['t'] = timeutils.nsec_string_to_datetime(sample['t'])
+            sample['t'] = timeutils.string_to_datetime(sample['t'])
+
             def convert_one(vec):
                 return [ _to_native(v, self._legend[i])
                          for i, v in enumerate(vec) ]
