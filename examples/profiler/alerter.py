@@ -7,8 +7,6 @@
 #   https://github.com/riverbed/flyscript/blob/master/LICENSE ("License").  
 # This software is distributed "AS IS" as set forth in the License.
 
-
-
 """
 Simple example demonstrating ability for multi-stage user defined policy.
 
@@ -19,6 +17,7 @@ python alerter.py tm08-1.lab.nbttech.com -u admin -p admin --expr1 'app WEB' --t
     --column1 'avg_bytes' --expr2 'app VoIP' --trigger2 '> 6100' --column2 'avg_bytes'
 
 """
+
 import sys
 import datetime
 
@@ -40,9 +39,9 @@ def safe_lambda(trigger):
     """ Return a reasonably safe lambda function for the given trigger
     """
     regex = re.compile('^[ <>=]+[0-9.]+[ ]*$')
-    trigger = trigger.strip()
+    trigger = trigger.strip().strip('"').strip("'")
     if re.match(regex, trigger):
-        return lambda x:eval('%s %s' % (x, trigger))
+        return lambda x: eval('%s %s' % (x, trigger))
     return None
 
 
