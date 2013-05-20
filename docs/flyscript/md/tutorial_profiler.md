@@ -390,7 +390,7 @@ script below, then walk through key differences that add the features we are loo
             header = [c.key for c in columns]
             Formatter.print_table(data[:10], header)
 
-    ExampleReport().run()
+    ExampleApp().run()
     
 Copy that code into a new file, and run it, you will find the same base set of 
 options used for profiler_columns.py are now included in this script.  Primarily,
@@ -453,7 +453,7 @@ we add a new option to pass in a timerange on the commandline.
             header = [c.key for c in columns]
             Formatter.print_table(data[:10], header)
 
-    ExampleReport().run()
+    ExampleApp().run()
 
 This is the main part of the script, and remains mostly unchanged from our previous
 version.  Rather than create the profiler instance directly, that is now being
