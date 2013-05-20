@@ -8,6 +8,8 @@
 # This software is distributed "AS IS" as set forth in the License.
 
 
+import sys
+import pprint
 
 import rvbd
 import rvbd.profiler
@@ -16,12 +18,16 @@ from rvbd.common.service import UserAuth
 from rvbd.profiler.filters import TimeFilter
 from rvbd.profiler.report import TrafficSummaryReport
 
-import pprint
-
 # connection information
-username = 'admin'
-password = 'admin'
-host = 'tm08-1.lab.nbttech.com'
+username = '<username>'
+password = '<password>'
+host = '<profiler.ip.address>'
+
+if (username == '<username>' or
+        password == '<password>' or
+        host == '<profiler.ip.address>'):
+    print "Update the username, password, and profiler host values before running this script."
+    sys.exit(0)
 
 auth = UserAuth(username, password)
 
@@ -32,7 +38,7 @@ columns = [p.columns.key.host_ip,
            p.columns.value.avg_bytes,
            p.columns.value.network_rtt]
 sort_column = p.columns.value.avg_bytes
-timefilter = TimeFilter.parse_range("last 5 m")
+timefilter = TimeFilter.parse_range("last 15 m")
 
 report.run('hos', columns, timefilter=timefilter, sort_col=sort_column)
 data = report.get_data()

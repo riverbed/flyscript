@@ -392,9 +392,28 @@ script below, then walk through key differences that add the features we are loo
 
     ExampleApp().run()
     
-Copy that code into a new file, and run it, you will find the same base set of 
-options used for profiler_columns.py are now included in this script.  Primarily,
-`hostname`, `username`, `password` are now all items to be passed to the script.
+Copy that code into a new file, and run it with a timerange option, and you
+will find the same base set of options used for profiler_columns.py are now
+included in this script.  Primarily, `hostname`, `username`, `password` are now
+all items to be passed to the script.
+
+For example:
+
+    :::python
+    > python myreport2.py <my.profiler.ip> -u <username> -p <password> –r "last 10 min"
+
+    host_ip           avg_bytes        network_rtt    
+    --------------------------------------------------
+    10.100.6.12       683349.295833                   
+    10.100.5.13       653938.525                      
+    10.100.120.108    572001.791667                   
+    10.100.5.11       438921.75                       
+    10.100.201.30     405558.216667    0.051          
+    10.100.5.12       398773.9875                     
+    10.100.201.20     359039.758333    0.153          
+    10.100.201.21     306396.929167    0.154          
+    10.100.202.2      301756.991667    0.011          
+    10.100.201.32     293926.695833    0.064      
 
 We also get a nicely formatted table, too!
 
