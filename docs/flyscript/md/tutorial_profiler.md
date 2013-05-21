@@ -400,7 +400,7 @@ all items to be passed to the script.
 For example:
 
     :::python
-    > python myreport2.py <my.profiler.ip> -u <username> -p <password> –r "last 10 min"
+    > python myreport2.py <my.profiler.ip> -u <username> -p <password> -r "last 10 min"
 
     host_ip           avg_bytes        network_rtt    
     --------------------------------------------------
