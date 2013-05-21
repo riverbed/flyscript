@@ -8,7 +8,6 @@
 # This software is distributed "AS IS" as set forth in the License.
 
 
-
 """
 List all the key and column fields that the given shark appliance supports.
 For full field details, use the -v flag.
@@ -31,7 +30,6 @@ class FieldsApp(SharkApp):
         group.add_option('-w', '--table-width', dest='table_width', default=120,
                             help="max width of table output, defaults to 120 characters")
         parser.add_option_group(group)
-
 
     def main(self):
         headers = ['ID', 'Description', 'Type']
