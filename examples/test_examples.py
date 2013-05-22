@@ -29,7 +29,7 @@ except ImportError:
     config = {}
 
 shark_scripts = {
-    'list_view_fields.py': [],
+    'shark_view_fields.py': [],
     'readview.py': [ '-l' ],
     'shark_info.py': []
 }

@@ -748,7 +748,8 @@ class SharkLiveViewTests(unittest.TestCase):
 
 if __name__ == '__main__':
     # for standalone use take one command-line argument: the shark host
-    assert len(sys.argv) == 2
+    # or use the testconfig.py config setting.
+    assert len(sys.argv) == 2 or len(config) > 1
 
     config = {'sharkhost': sys.argv[1]}
     sys.argv = [ sys.argv[0] ]

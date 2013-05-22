@@ -58,8 +58,8 @@ class ProfilerInfo(ProfilerApp):
     def add_options(self, parser):
 
         group = optparse.OptionGroup(parser, "Report column information")
-        group.add_option('--list-groupbys', default=False, action='store_true')
-        group.add_option('--list-columns', default=False, action='store_true')
+        group.add_option('--list-groupbys', default=False, action='store_true',
+                         help='Show list of valid groupbys instead of columns')
 
         group.add_option('-c', '--centricity', dest='centricity', default=None,
                                   help="centricity to query for")
@@ -95,17 +95,26 @@ class ProfilerInfo(ProfilerApp):
         if self.options.list_groupbys:
             header =  ["GroupBy", "Id"]
             data = [(k, v) for k,v in self.profiler.groupbys.iteritems()]
+            data.sort()
             Formatter.print_table(data, header)
-            
-        if self.options.list_columns:
+        else:
             if self.options.ids:
                 columns = self.profiler.get_columns_by_ids(self.options.ids)
             else:
                 o = self.options
+
+                # find groupby looking in keys and values
+                if o.groupby in self.profiler.groupbys:
+                    groupby = self.profiler.groupbys[o.groupby]
+                elif o.groupby in self.profiler.groupbys.values():
+                    groupby = o.groupby
+                else:
+                    groupby = None
+
                 args = {
                     'realms': [o.realm] if o.realm else None,
                     'centricities': [o.centricity] if o.centricity else None,
-                    'groupbys': [self.profiler.groupbys[o.groupby]] if o.groupby else None,
+                    'groupbys': [groupby] if groupby else None,
                     }
                 columns = self.profiler.search_columns(**args)
 
