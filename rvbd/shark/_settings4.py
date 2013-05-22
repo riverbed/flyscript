@@ -533,6 +533,10 @@ class Settings4(object):
             for p in self._settings.profilers:
                 if p.address == address:
                     self._settings.profilers.remove(p)
+                    # Check if there is no Profiler set
+                    if len(self._settings.profilers) == 0:
+                        # If no profiler is available Profiler Export should be disabled 
+                        self._settings.enabled = False
                     self._update()
                     return
             raise ValueError("No profiler enabled with address %s" % address)
@@ -540,6 +544,7 @@ class Settings4(object):
         def remove_all_profilers(self):
             self._get()
             self._settings.profilers = []
+            self._settings.enabled = False
             self._update()
 
         def enabled_ports(self):

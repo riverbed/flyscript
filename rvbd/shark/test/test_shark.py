@@ -580,6 +580,40 @@ class SharkTests(unittest.TestCase):
         pe.disable()
         pe.remove_profiler('tm08-1.lab.nbttech.com')
 
+    def test_profiler_export_remove(self):
+        shark = self.shark
+        pe = shark.settings.profiler_export
+        
+        # Remove all Profilers
+        pe.remove_all_profilers()
+        
+        # Add one Profiler
+        pe.add_profiler('tm08-1.lab.nbttech.com')
+        pe.enable()
+        
+        # Remove the only profiler export
+        pe.remove_profiler('tm08-1.lab.nbttech.com')
+        
+        # Check there is no profiler
+        assert shark.settings.profiler_export.get_profilers() == []
+        
+        
+    def test_profiler_export_remove_all(self):
+        shark = self.shark
+        pe = shark.settings.profiler_export
+        
+        # Add two Profilers
+        pe.add_profiler('tm08-1.lab.nbttech.com')
+        pe.add_profiler('doesnotexist.lab.nbttech.com')
+        pe.enable()
+        
+        # Remove all Profilers
+        pe.remove_all_profilers()
+        
+        # Check there is no profiler        
+        assert shark.settings.profiler_export.get_profilers() == []
+        assert shark.settings.profiler_export.enabled() == False
+        
     def test_job_export(self):
         shark = self.shark
         interface = shark.get_interfaces()[0]
