@@ -8,22 +8,23 @@
 # This software is distributed "AS IS" as set forth in the License.
 
 
-
-'''
+"""
 This simple script creates a trace clip on the first available job, with the
 following properties:
  - time range is the last 30 minutes
  - the clip contains only packets for the IP address 192.168.0.1
-'''
+"""
 
 from rvbd.shark.app import SharkApp
 from rvbd.shark.filters import TimeFilter, SharkFilter
+
 
 def main(app):
     # Get the list of jobs
     jobs = app.shark.get_capture_jobs()
     if len(jobs) == 0:
-        print "no jobs on the appliance"
+        print ("No jobs on the appliance, you can create jobs using the "
+               "'control_job.py' script.")
         return 0
     
     # Pick the first job
@@ -42,7 +43,12 @@ def main(app):
     # Create the clip
     clip = job.add_clip(filters, "a test clip")
 
-    print 'clip created successfully'
+    print 'Clip with the following properties created:'
+    print ''
+    print 'ID: %s' % clip.id
+    print 'Description: %s' % clip.description
+    print 'Source Path: %s' % clip.source_path
+    print 'Size: %s' % clip.size
 
 
 if __name__ == '__main__':

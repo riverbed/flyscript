@@ -8,15 +8,15 @@
 # This software is distributed "AS IS" as set forth in the License.
 
 
-
-'''
+"""
 This script shows how to create a Capture Job in the simplest possible way:
 only the required job parameters are set, while all the optional parameters
 keep their default value.
-'''
+"""
 
 from rvbd.shark.app import SharkApp
 from rvbd.common.utils import bytes2human
+
 
 class CreateJob(SharkApp):
     def add_options(self, parser):
@@ -39,26 +39,35 @@ class CreateJob(SharkApp):
             for i, ifc in enumerate(interfaces):
                 print '\t{0}. {1}'.format(i+1, ifc)
 
-            while True:
+            while 1:
                 idx = raw_input('Port number(1-{0})? '.format(len(interfaces)))
                 try:
                     ifc = interfaces[int(idx)-1]
                     break
                 except IndexError:
-                    print 'bad index try again'
+                    print 'Bad index try again'
 
         # Make the user pick the job size
         size = self.options.size
         if size is None:
             stats = self.shark.get_stats()
             storage = stats['storage']['packet_storage']
-            print 'Storage size is {0}, {1} available'.format(
-                bytes2human(storage.total),bytes2human(storage.unused))
-            size = raw_input('Job size (e.g. 1024, 1KB, 20%)? ')
+            print 'Storage size is {0}, {1} available'.format(bytes2human(storage.total),
+                                                              bytes2human(storage.unused))
+            size = raw_input('Job size, greater than 256MB (e.g. 1.1GB, 512M, 20%)? ')
 
         job = self.shark.create_job(ifc, name, size)
-        print 'Capture Job created successfully'
-        #job.delete()
+        print 'Capture Job successfully created with the following properties:'
+        print ''
+        print 'ID: %s' % job.id
+        print 'Current State: %s' % job.get_state()
+        print 'Name: %s' % job.name
+        print 'Interface: %s' % job.interface
+        print 'Source Path: %s' % job.source_path
+        print 'Size limit: %s' % job.size_limit
+        print 'Current size on disk: %s' % job.size_on_disk
+
+        job.delete()
 
 
 if __name__ == '__main__':

@@ -8,19 +8,17 @@
 # This software is distributed "AS IS" as set forth in the License.
 
 
-
-'''
+"""
 This script contains several examples that show more advanced view creation
-and data retrieval scenarios:
+and data retrieval scenarios.
+"""
 
--
-'''
 import time
 import datetime
 
 from rvbd.shark.app import SharkApp
 from rvbd.shark.types import Value, Key
-from rvbd.shark.filters import *
+from rvbd.shark.filters import SharkFilter 
 from rvbd.shark.viewutils import write_csv
 
 ###############################################################################
@@ -28,6 +26,7 @@ from rvbd.shark.viewutils import write_csv
 ###############################################################################
 
 CSV_FILE_NAME = "result.csv"
+
 
 def main(app):
     # Open the remote file
@@ -88,8 +87,8 @@ def main(app):
 
     # Specify the column list
     columns = [
-        Key(sk.columns.ip.src),
-        Value(sk.columns.generic.bytes),
+        Key(app.shark.columns.ip.src),
+        Value(app.shark.columns.generic.bytes),
     ]
 
     # The list of filters is passes as a parameter to create_view()
@@ -110,7 +109,7 @@ def main(app):
     ##########################################################################
 
     # Specify the column list
-    columns = [Value(sk.columns.http.answered_requests)]
+    columns = [Value(app.shark.columns.http.answered_requests)]
 
     # The list of filters is passes as a parameter to create_view()
     print source, columns
@@ -149,24 +148,24 @@ def main(app):
 
     # Specify the column list
     columns = [
-        Key(sk.columns.ip.src),
-        Value(sk.columns.generic.bytes)
+        Key(app.shark.columns.ip.src),
+        Value(app.shark.columns.generic.bytes)
     ]
 
     # The list of filters is passes as a parameter to create_view()
     v = app.shark.create_view(source, columns)
 
     # Retrieve the view data.
-    output = v.get_data(delta=datetime.timedelta(minutes=1),# 1 minute samples
-                        sortby=1,              # Sort by column 1 (bytes)
-                        sorttype='descending', # Sort from biggest to smallest
-                        fromentry=0,           # For each 1 min sample, the
-                                               # first element to display is
-                                               # the biggest one
-                        toentry=2              # For each 1 min sample, the
-                                               # last element to display is
-                                               # the third biggest one
-                    )
+    output = v.get_data(delta=datetime.timedelta(minutes=1),  # 1 minute samples
+                        sortby=1,                # Sort by column 1 (bytes)
+                        sorttype='descending',   # Sort from biggest to smallest
+                        fromentry=0,             # For each 1 min sample, the
+                                                 # first element to display is
+                                                 # the biggest one
+                        toentry=2                # For each 1 min sample, the
+                                                 # last element to display is
+                                                 # the third biggest one
+                        )
 
     # Proceed printing the data to the screen
     for sample in output:

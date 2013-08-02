@@ -8,32 +8,33 @@
 # This software is distributed "AS IS" as set forth in the License.
 
 
-
-'''
+"""
 This script demonstrates how to use the View class to do two
 simple and common tasks:
 1. enumerate all the existing views on a shark (the -l command line option)
 2. attach to an existing view, extract a section of data from it, and
    write it to a CSV file
-'''
-
-import sys
+"""
 
 from rvbd.shark.app import SharkApp
 from rvbd.shark.viewutils import write_csv, print_data, OutputMixer
 
+
 class ReadView(SharkApp):
+    def __init__(self, *args, **kwargs):
+        super(ReadView, self).__init__(*args, **kwargs)
+        self.optparse.set_usage('%prog -l SHARK or %prog SHARK VIEWID')
+
     def add_options(self, parser):
-        parser.add_option('-l', action="store_true", dest="list", default=False,
+        parser.add_option('-l', action="store_true", dest="listviews", default=False,
                           help='print a list of running views')
         parser.add_option('-f', dest='fname', default=None,
                           help='write CSV file to given file name')
         parser.add_option('-o', dest='output', default=None,
                           help='retrieve only the specified output field')
-        parser.set_usage('%prog -l SHARK or %prog SHARK VIEWID')
 
     def validate_args(self):
-        if self.options.list:
+        if self.options.listviews:
             nargs = 1
         else:
             nargs = 2
@@ -55,7 +56,7 @@ class ReadView(SharkApp):
             print_data(legend, data)
         
     def main(self):
-        if self.options.list:
+        if self.options.listviews:
             # If -l is specified, we show the list of views running on the
             #appliance, and the outputs for each of them,
             views = self.shark.get_open_views()

@@ -8,27 +8,28 @@
 # This software is distributed "AS IS" as set forth in the License.
 
 
-
-'''
+"""
 This script shows the simplest way to create a custom view on a Shark and
 retrieve its data. It creates a simple top talker view by processing the remote
 file specified on the command line (use the shark_info.py script to list the
 files on the appliance), and then saves the data on a csv file that can be
 opened in excel.
-'''
+"""
+
 from rvbd.shark.app import SharkApp
 from rvbd.shark.types import Value, Key
 from rvbd.shark.viewutils import write_csv
 
 CSV_FILE_NAME = "result.csv"
 
+
 class CreateView(SharkApp):
     def add_options(self, optparse):
-        optparse.add_argument('--file', help='filename to open')
+        optparse.add_option('--file', help='filename to open')
 
     def main(self):
         # Open the remote file
-        source = self.shark.get_file(args.file)
+        source = self.shark.get_file(self.options.file)
 
         # Specify the column list
         columns = [
@@ -39,11 +40,11 @@ class CreateView(SharkApp):
             # to try it, put a breakpoint on the line below and then type
             # "sk.columns." in the debugger. That will work in any inteactive
             # python editor as well (e.g. eclipse, bpython, dreampie...).
-            Key(sk.columns.ip.src),
+            Key(self.shark.columns.ip.src),
 
             # Each of the rows in the view is going to have a value column
             # containing the amount of bytes.
-            Value(sk.columns.generic.bytes),
+            Value(self.shark.columns.generic.bytes),
         ]
 
         # Create the view

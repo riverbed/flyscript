@@ -8,15 +8,14 @@
 # This software is distributed "AS IS" as set forth in the License.
 
 
-
-'''
+"""
 This script can be used to export packets from Trace Files, Capture Jobs or 
 Trace clips on a Shark Appliance. An optional IP address can be specified to 
 restrict the exported packets to the ones of a single host. 
 
 Note: in order to export a clip with this script, you need to make sure the
 clip has been given a name
-'''
+"""
 
 from rvbd.shark.app import SharkApp
 from rvbd.shark.filters import SharkFilter
@@ -35,20 +34,20 @@ class ExportApp(SharkApp):
     def main(self):
         # If the user specified a host, create the correspondent filter
         if self.options.filter is not None:
-            flts = [SharkFilter('ip::ip.str="{0}"'.format(args.filter))]
+            flts = [SharkFilter('ip::ip.str="{0}"'.format(self.args.filter))]
         else:
             flts = None
 
         # Do the export based on the specified object type
         if self.options.filename is not None:
             # find the file
-            file = self.shark.get_file(args.filename)
+            f = self.shark.get_file(self.args.filename)
 
             # extract the file name from the full path
             filename = str(file).split('/')[-1]
 
             # export the file
-            file.export(filename + '.pcap', filters=flts)
+            f.export(filename + '.pcap', filters=flts)
         elif self.options.jobname is not None:
             # find the job
             job = self.shark.get_capture_job_by_name(self.options.jobname)
@@ -62,3 +61,5 @@ class ExportApp(SharkApp):
             # extract the clip
             clip.export(clip.description + '.pcap', filters=flts)
 
+if __name__ == '__main__':
+    ExportApp().run()

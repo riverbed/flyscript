@@ -8,92 +8,80 @@
 # This software is distributed "AS IS" as set forth in the License.
 
 
+"""
+This script performs backup and restores of configuration
+to a Shark appliance.
+"""
 
-'''
-This script connects to a Shark appliance, collects a bounch of information
-about it, and prints it the screen.
-'''
-
-import json
 import sys
+import json
 import getpass
 from rvbd.common.utils import DictObject
 from rvbd.shark.app import SharkApp
 
 
-import traceback
-class TracePrints(object):
-    def __init__(self):    
-        self.stdout = sys.stdout
-        
-    def write(self, s):
-        self.stdout.write("Writing %r\n" % s)
-        traceback.print_stack(file=self.stdout)
-
-# sys.stdout = TracePrints()
-
 class BackupApp(SharkApp):
-    config_types = [
-      'basic', 'auth', 'jobs', 'profiler_export', 'audit', 'protocols', 'users'
-    ]
+    config_types = ['basic', 'auth', 'jobs', 'profiler_export', 'audit', 'protocols', 'users']
 
     def add_options(self, parser):
-        parser.add_option('-f', '--file',
+        parser.add_option('-f', '--filename',
                           help='Filename to use for backup/restore')
         parser.add_option('-b', '--backup', action='store_true',
                           help='Backup mode: store configuration to the specified file')
         parser.add_option('-r', '--restore', action='store_true',
                           help='Restore mode: apply configuration from the specified file')
         parser.add_option('-t', '--types',
-                          help='Optional comma-separate list to limit the configuration type(s) to backup/restore (options are %s).' %
-                          (', '.join(self.config_types)))
+                          help='Optional comma-separate list to limit the configuration '
+                               'type(s) to backup/restore (options are %s).' %
+                               (', '.join(self.config_types)))
 
     def main(self):
-        if self.opts.types is None:
+        if self.options.types is None:
             self.types = self.config_types
         else:
-            self.types = self.opts.types.split(',')
+            self.types = self.options.types.split(',')
             for t in self.types:
                 if not t in self.config_types:
                     raise ValueError("Invalid configuration type %s" % t)
 
-        if self.opts.file is None:
+        if self.options.filename is None:
             raise ValueError("Must specify backup/restore file")
 
-        if self.opts.backup:
+        if self.options.backup:
             self.backup()
-        elif self.opts.restore:
+        elif self.options.restore:
             self.restore()
         else:
-            raise RuntimeError("either backup mode (-b) or restore mode (-r) must be specified")
+            raise RuntimeError("either backup mode (-b) or restore mode (-r) "
+                               "must be specified")
 
     def backup(self):
         # First see if the file is there and if it has anything in it
         # already, parse it
         self.config = {}
         try:
-            f = open(self.opts.file)
+            f = open(self.options.filename)
             self.config = json.load(f, object_hook=DictObject.create_from_dict)
             f.close()
         except Exception, e:
             print e, e.__class__
-        
+
         print "Starting backup..."
-        f = open(self.opts.file, 'w')
+        f = open(self.options.filename, 'w')
 
         for t in self.types:
             if t == 'basic':
                 print "Backing up basic configuration..."
                 self.config['basic'] = self.shark.api.settings.get_basic()
-                
+
             elif t == 'auth':
                 print "Backing up authentication settings..."
                 self.config['auth'] = self.shark.api.settings.get_auth()
-                
+
             elif t == 'audit':
                 print "Backing up audit settings..."
                 self.config['audit'] = self.shark.api.settings.get_audit()
-                
+
             elif t == 'profiler_export':
                 print "Backing up profiler export settings..."
                 self.config['profiler_export'] = self.shark.api.settings.get_profiler_export()
@@ -116,10 +104,17 @@ class BackupApp(SharkApp):
         print "Backup complete."
 
     def restore(self):
-        f = open(self.opts.file)
+        print 'This operation will overwrite any existing configuration on your '
+        print 'Shark appliance.  Please verify that you want to continue.'
+        result = raw_input('Continue?  [y/N] > ')
+        if result not in ('Y', 'y'):
+            print 'Okay, exiting.'
+            sys.exit()
+
+        f = open(self.options.filename)
         self.config = json.load(f, object_hook=DictObject.create_from_dict)
         f.close()
-        
+
         print "Starting restore..."
 
         for t in self.types:
@@ -128,18 +123,18 @@ class BackupApp(SharkApp):
                 # XXX/demmer we may not want to do this since this
                 # could change the IP address
                 self.shark.api.settings.update_basic(self.config['basic'])
-                
+
             elif t == 'auth':
                 print "Restoring authentication settings..."
                 self.shark.api.settings.update_auth(self.config['auth'])
 
-                print "Restoring (reconecting to shark...)"
+                print "Restoring (reconnecting to shark...)"
                 self.connect()
-                
+
             elif t == 'audit':
                 print "Restoring audit settings..."
                 self.shark.api.settings.update_audit(self.config['audit'])
-                
+
             elif t == 'profiler_export':
                 print "Restoring profiler export settings..."
                 self.shark.api.settings.update_profiler_export(self.config['profiler_export'])
@@ -164,12 +159,13 @@ class BackupApp(SharkApp):
                         if new_job == config_by_name[new_job.name]:
                             print "%s (skipped since already configured)..." % new_job.name
                         else:
-                            print "%s (ERROR: job exists with different configuration)..." % new_job.name
+                            print ("%s (ERROR: job exists with different configuration)..."
+                                   % new_job.name)
                         continue
 
                     print "%s (configured)..." % new_job.name
                     self.shark.api.jobs.add(new_job)
-                
+
             elif t == 'users':
                 print "Restoring groups..."
                 # Don't blow away existing groups with the same configuration
@@ -184,12 +180,13 @@ class BackupApp(SharkApp):
                         if new_group == config_by_name[new_group.name]:
                             print "%s (skipped since already configured)..." % new_group.name
                         else:
-                            print "%s (ERROR: group exists with different configuration)..." % new_group.name
+                            print ("%s (ERROR: group exists with different configuration)..."
+                                   % new_group.name)
                         continue
 
                     print "%s..." % new_group.name
                     self.shark.api.auth.groups.add(new_group)
-                
+
                 print "Restoring users..."
                 user_config = self.shark.api.auth.users.get_all()
 
@@ -202,7 +199,8 @@ class BackupApp(SharkApp):
                         if new_user == config_by_name[new_user.name]:
                             print "%s (skipped since already configured)..." % new_user.name
                         else:
-                            print "%s (ERROR: user exists with different configuration)..." % new_user.name
+                            print ("%s (ERROR: user exists with different configuration)..."
+                                   % new_user.name)
                         continue
 
                     print "%s..." % new_user.name
@@ -214,17 +212,15 @@ class BackupApp(SharkApp):
                     while True:
                         passwd = getpass.getpass("Enter password: ")
                         passwd2 = getpass.getpass("Enter password (again): ")
-                        
+
                         if passwd != passwd2:
                             print "ERROR: passwords do not match"
                             continue
 
                         new_user['password'] = passwd
                         break
-                        
+
                     self.shark.api.auth.users.add(new_user)
-                
-                # TBD
 
         print "Restore complete."
 

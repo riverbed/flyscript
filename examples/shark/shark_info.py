@@ -8,7 +8,6 @@
 # This software is distributed "AS IS" as set forth in the License.
 
 
-
 """
 This script connects to a Shark appliance, collects a bounch of information
 about it, and prints it the screen.
@@ -16,6 +15,7 @@ about it, and prints it the screen.
 
 from rvbd.shark.app import SharkApp
 from rvbd.common.utils import bytes2human
+
 
 class SharkInfo(SharkApp):
 

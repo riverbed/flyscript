@@ -8,13 +8,12 @@
 # This software is distributed "AS IS" as set forth in the License.
 
 
-
-'''
+"""
 This script can be used to start, stop, delete or clear a Capture Job on a
 Shark Appliance.
 
 Use the -l option to list the appliance jobs.
-'''
+"""
 
 from rvbd.shark.app import SharkApp
 
