@@ -34,7 +34,3 @@ class APITimestampFormat(object):
     SECOND_MICROSECOND_STR = "s.us string"
     SECOND_MILLISECOND     = "s.ms number"
     SECOND_MILLISECOND_STR = "s.ms string"
-
-class API(object):
-    version = NotImplementedError()
-    common_version = NotImplementedError()
