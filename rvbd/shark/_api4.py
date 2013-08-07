@@ -6,7 +6,7 @@
 # This software is distributed "AS IS" as set forth in the License.
 
 
-from rvbd.shark._api_helpers import APIGroup, APITimestampFormat
+from rvbd.shark._api_helpers import APIGroup, APITimestampFormat, API
 import urllib
 
 class API4Group(APIGroup):
@@ -743,7 +743,9 @@ class Misc(API4Group):
         resp = self.shark.conn.request(self.uri_prefix + "/ping", method, body=data, extra_headers=headers)
         return resp.read()
     
-class API4_0(object):
+class API4_0(API):
+    version = '4.0'
+    common_version = '1.0'
     def __init__(self, shark):
         self.shark = shark
         self.common = Common("/api/common/1.0", self.shark)
