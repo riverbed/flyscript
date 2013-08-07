@@ -22,6 +22,7 @@ from rvbd.shark._connection import SharkConnection
 from rvbd.shark._exceptions import SharkException
 from rvbd.shark._api_helpers import SharkAPIVersions
 from rvbd.shark._api4 import API4_0
+from rvbd.shark._api5 import API5_0
 from rvbd.common.utils import ColumnProxy
 from rvbd.shark._class_mapping import Classesv4, Classes, Classesv5
 
@@ -30,6 +31,7 @@ FILTERS_MAP = {}
 
 API_TABLE = {
     "4.0" : API4_0,
+    "5.0" : API5_0
     }
 
 CLASS_TABLE = {

@@ -748,24 +748,25 @@ class API4_0(API):
     common_version = '1.0'
     def __init__(self, shark):
         self.shark = shark
-        self.common = Common("/api/common/1.0", self.shark)
-        self.auth = Auth("/api/shark/4.0", self.shark)
-        self.settings = Settings("/api/shark/4.0", self.shark)
-        self.interfaces = Interfaces("/api/shark/4.0", self.shark)
-        self.jobs = Jobs("/api/shark/4.0", self.shark)
-        self.clips = Clips("/api/shark/4.0", self.shark)
-        self.fs = Files("/api/shark/4.0", self.shark)
-        self.licenses = Licenses("/api/shark/4.0", self.shark)
-        self.certificates = Certificates("/api/shark/4.0", self.shark)
-        self.system = System("/api/shark/4.0", self.shark)
-        self.view = Views("/api/shark/4.0", self.shark)
-        self.stats = Stats("/api/shark/4.0", self.shark)
-        self.info = Info('/api/shark/4.0/info', self.shark)
-        self.users = Users('/api/shark/4.0', self.shark)
-        self.groups = Users('/api/shark/4.0', self.shark)
+        self.common = Common("/api/common/"+self.common_version, self.shark)
+        self.auth = Auth("/api/shark/"+self.version, self.shark)
+        self.settings = Settings("/api/shark/"+self.version, self.shark)
+        self.interfaces = Interfaces("/api/shark/"+self.version, self.shark)
+        self.jobs = Jobs("/api/shark/"+self.version, self.shark)
+        self.clips = Clips("/api/shark/"+self.version, self.shark)
+        self.fs = Files("/api/shark/"+self.version, self.shark)
+        self.licenses = Licenses("/api/shark/"+self.version, self.shark)
+        self.certificates = Certificates("/api/shark/"+self.version, self.shark)
+        self.system = System("/api/shark/"+self.version, self.shark)
+        self.view = Views("/api/shark/"+self.version, self.shark)
+        self.stats = Stats("/api/shark/"+self.version, self.shark)
+        self.info = Info('/api/shark/'+self.version+'/info', self.shark)
+        self.users = Users('/api/shark/'+self.version, self.shark)
+        self.groups = Users('/api/shark/'+self.version, self.shark)
 
         # For the misc handlers just make them methods of the api class itself
-        m = Misc('/api/shark/4.0', self.shark)
+        m = Misc('/api/shark/'+self.version, self.shark)
         self.ping = m.ping
+
 
 __all__ = ['API4_0']
