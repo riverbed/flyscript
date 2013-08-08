@@ -67,7 +67,7 @@ HERE = os.path.abspath(os.path.dirname(__file__))
 trace_files_dir = os.path.join(HERE, "traces")
 
 
-def create_shark():
+def create_shark(host):
     # Get our host and user credentials from testconfig
     # and create a persistent Shark object for all tests
     if 'sharkhost' not in config:
@@ -90,9 +90,9 @@ def create_shark():
         port = None
   
     if port:
-        sk = Shark(config['sharkhost'], port=port, auth=auth)
+        sk = Shark(host or config['sharkhost'], port=port, auth=auth)
     else:
-        sk = Shark(config['sharkhost'], auth=auth)
+        sk = Shark(host or config['sharkhost'], auth=auth)
     return sk
 
 
@@ -168,8 +168,13 @@ def cleanup_shark(shark):
 
 
 class SharkTests(unittest.TestCase):
+
     def setUp(self):
-        self.shark = create_shark()
+        try:
+            host = self.host
+        except:
+            host = None
+        self.shark = create_shark(host)
 
     def tearDown(self):
         cleanup_shark(self.shark)
@@ -747,6 +752,28 @@ class SharkLiveViewTests(unittest.TestCase):
 
         view.close()
 
+    def test_interface_name_change(self):
+        #test on live interface
+        s = self.shark
+        inst = s.get_interfaces()[0]
+        inst.name = "flyscript test"
+        self.assertEqual(inst.name, "flyscript test")
+        inst.save()
+
+
+# this enables scenarios
+#need pip install testscenarios
+# we need scenarios to test over multiple shark (vShark and Shark and maybe Shak+Profiler and
+# Shark+Steelhead
+try:
+    import testscenarios
+    vdorothy5 = ('vdorothy5', {'host':'vdorothy5.lab.nbttech.com'})
+    oak_mako10 = ('oak-mako10', {'host':'oak-mako10.lab.nbttech.com'})
+
+    class SharkWithScenarios(testscenarios.TestWithScenarios, SharkTests):
+        scenarios = [vdorothy5, oak_mako10]
+except:
+    pass
 
 if __name__ == '__main__':
     # for standalone use take one command-line argument: the shark host
