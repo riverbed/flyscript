@@ -68,6 +68,9 @@ class Common(API4Group):
 
     def ping(self, as_json=True, timestamp_format=APITimestampFormat.NANOSECOND):
         return self._xjtrans("/ping", "GET", None, as_json, timestamp_format)
+    
+    def info(self):
+        return self._xjtrans("/info", "GET", None, True, APITimestampFormat.NANOSECOND)
 
 class Settings(API4Group):
     def get_basic(self, as_json=True, timestamp_format=APITimestampFormat.NANOSECOND):
