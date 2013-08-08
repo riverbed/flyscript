@@ -24,6 +24,7 @@ API_VERSIONS = ["1.0"]
 # Notes:
 #   common api not supported
 
+
 class StingrayTrafficManager(rvbd.common.service.Service):
     """The StingrayTrafficManager class is the main interface to interact with a Stingray
     Traffic Manager Appliance.  Primarily this provides an interface to configuration."""
@@ -61,16 +62,21 @@ class StingrayTrafficManager(rvbd.common.service.Service):
             
     def create_trafficscript_rule(self, vserver, trafficscript):
         rule = 'ARX_' + vserver
-        self.conn.upload_file("/api/tm/1.0/config/active/rules/%s" % rule, data=trafficscript)
 
-        need_to_add=True
+        extra_headers = {'Content-Type': 'application/octet-stream'}
+        self.conn.upload("/api/tm/1.0/config/active/rules/%s" % rule,
+                         data=trafficscript,
+                         method="PUT",
+                         extra_headers=extra_headers)
+
+        need_to_add = True
         jp = self.conn.json_request("/api/tm/1.0/config/active/vservers/%s" % vserver)
         for r in jp['properties']['basic']['response_rules']:
-            if r ==  rule:
-                need_to_add=False
+            if r == rule:
+                need_to_add = False
                 break
             elif r == '/' + rule:
-                need_to_add=False
+                need_to_add = False
                 loc = jp['properties']['basic']['response_rules'].index(r)
                 jp['properties']['basic']['response_rules'][loc] = rule
                 break
@@ -78,7 +84,9 @@ class StingrayTrafficManager(rvbd.common.service.Service):
         if need_to_add:
             jp['properties']['basic']['response_rules'].append(rule)
 
-        self.conn.json_request("/api/tm/1.0/config/active/vservers/%s" % vserver, method="PUT", data=jp)
+        self.conn.json_request("/api/tm/1.0/config/active/vservers/%s" % vserver,
+                               method="PUT",
+                               data=jp)
     
     def change_rule(self, vserver, rule, enable=True, request=True, response=True):
         jp = self.conn.json_request("/api/tm/1.0/config/active/vservers/%s" % vserver)

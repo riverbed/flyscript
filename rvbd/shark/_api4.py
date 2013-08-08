@@ -365,7 +365,7 @@ class Files(API4Group):
         """Raw wrapper around the file upload. """
         if path[0] == '/':
             path = path[1:]
-        return self.shark.conn.post_raw(self.uri_prefix + "/fs/%s" % path, data, extra_headers=headers)
+        return self.shark.conn.upload(self.uri_prefix + "/fs/%s" % path, data, extra_headers=headers)
                         
     def upload_xjobject(self, path, data, headers, as_json=True, timestamp_format = APITimestampFormat.NANOSECOND):
         """Upload an XML or JSON-encoded file object."""
@@ -400,7 +400,7 @@ class Files(API4Group):
                    'Content-Type' : 'application/octet-stream'}
         if path[0] == '/':
             path = path[1:]
-        return self.shark.conn.post_raw(self.uri_prefix + "/fs/%s" % path, local_file_ref, extra_headers=headers)
+        return self.shark.conn.upload(self.uri_prefix + "/fs/%s" % path, local_file_ref, extra_headers=headers)
     
     def download(self, path, local_path=None):
         """Convenience function to download a file."""

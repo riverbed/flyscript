@@ -11,7 +11,8 @@ Connection
 {method request}
 {method xml_request}
 {method json_request}
-{method post_raw}
+{method upload}
+{method download}
 {method get_raw}
 {method add_headers}
 {method del_headers}
