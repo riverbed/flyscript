@@ -49,6 +49,7 @@ class Classesv5(Classesv4):
         super(Classesv5, self).__init__()
         import rvbd.shark._source5 as v5
         self.Job = v5.Job5
+        self.Interface = v5.Interface5
 
 def path_to_class(shark, path):
     mapping = dict(

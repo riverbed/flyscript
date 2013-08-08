@@ -23,19 +23,20 @@ class Interface4(_interfaces._InputSource):
     :py:func:`rvbd.shark.shark.Shark.get_interface_by_name`."""
     def __init__(self, shark, data):
         super(Interface4, self).__init__(shark, data)
+        self.api = shark.api.interfaces
         self.id = self.data.id
 
     def __repr__(self):
-        return '<Interface4 {0} {1}>'.format(self.data.name, self.data.type)
+        return '<{0} {1} {2}>'.format(self.__class__.__name__, self.data.name, self.data.type)
 
     def __str__(self):
         return '{0}'.format(self.data.name)
-
+    
     @property
     def name(self):
         """The interface device name."""
         return self.data.name
-
+    
     @property
     def description(self):
         """The interface description."""
