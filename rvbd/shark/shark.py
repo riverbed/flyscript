@@ -611,3 +611,15 @@ class Shark(Service):
         if case_id:
             config['case_id'] = int(case_id)
         return self.api.system.get_sysdump(path, config)
+    
+    @property
+    def version(self):
+        """Returns the Shark software version
+        """
+        return self.api.common.info().get('sw_version')
+
+    @property
+    def model(self):
+        """Returns the Shark software model
+        """
+        return self.api.common.info().get('model')
