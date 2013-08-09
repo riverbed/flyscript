@@ -33,6 +33,13 @@ class _InputSource(object):
                 return source
         return None
 
+    def update(self, data):
+        """Update the data of the current object
+        with new data from the server
+        """
+        assert self.id == data['id']
+        self.data = DictObject.create_from_dict(data)
+
 
 class Clip(_InputSource):
 

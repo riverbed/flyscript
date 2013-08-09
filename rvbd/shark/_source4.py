@@ -60,6 +60,13 @@ class Interface4(_interfaces._InputSource):
         interfaces = shark.api.interfaces.get_all()
         return [ cls(shark, data) for data in interfaces ]
 
+    def update(self):
+        """Update current object with the values from the server
+        """
+        data = self.api.get_details(self.id)
+        super(Interface4, self).update(data)
+    
+
 class Clip4(_interfaces.Clip):
     """A trace clip packet source.
     These objects are returned by `Shark.get_clips`."""

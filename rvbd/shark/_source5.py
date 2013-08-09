@@ -12,7 +12,17 @@ class Interface5(s4.Interface4):
                     'description': self.data.description
                     })
         else:
-            self.api.update(self.id, self.data)
+            # we are in a normal shark, we have to
+            # delete things we cannot modify
+            data = self.data.copy()
+            del data['interface_components']
+            del data['link']
+            del data['board']
+            del data['is_promiscuous_mode']
+            del data['type']
+            del data['id']
+            self.api.update(self.id, data)
+        self.update()
 
     @s4.Interface4.name.setter
     def name(self, value):
