@@ -28,6 +28,7 @@ import datetime
 
 http_loglevel = 0
 debug_msg_body = 0
+scenario_only = False
 
 try:
     from testconfig import config
@@ -88,11 +89,11 @@ def create_shark(host):
         port = config['sharkport']
     except KeyError:
         port = None
-  
+ 
     if port:
-        sk = Shark(host or config['sharkhost'], port=port, auth=auth)
+        sk = Shark(host, port=port, auth=auth)
     else:
-        sk = Shark(host or config['sharkhost'], auth=auth)
+        sk = Shark(host, auth=auth)
     return sk
 
 
@@ -105,7 +106,8 @@ def setup_defaults():
                Value('generic.packets'),
                Value('http.duration', Operation.max, description="Max Duration"),
                Value('http.duration', Operation.avg, description="Avg Duration")]
-    filters = [SharkFilter('(generic.application="Web") & (http.content_type contains "image/")'),
+    # we don't have generic.application in 5.0 anymore
+    filters = [SharkFilter('(tcp.src_port=80) | (tcp.dst_port=80)'),
                TimeFilter.parse_range('last 2 hours')]
     return columns, filters
 
@@ -173,7 +175,9 @@ class SharkTests(unittest.TestCase):
         try:
             host = self.host
         except:
-            host = None
+            host = config['sharkhost']
+            if scenario_only:
+                unittest.skip('Running only tests with scenario')
         self.shark = create_shark(host)
 
     def tearDown(self):
@@ -203,8 +207,10 @@ class SharkTests(unittest.TestCase):
 
     def test_view_on_interface(self):
         """ Test creating a view on an interface """
-
-        interface = self.shark.get_interface_by_name('mon0')
+        try:
+            interface = self.shark.get_interface_by_name('mon0')
+        except KeyError:
+            interface = self.shark.get_interfaces()[0]
         columns, _ = setup_defaults()
         filters = None
 
@@ -661,6 +667,15 @@ class SharkTests(unittest.TestCase):
 #        self.assertTrue(os.path.exists(f))
 #        os.remove(f)
 
+    def test_interface_name_change(self):
+        #test on live interface
+        s = self.shark
+        inst = s.get_interfaces()[0]
+        inst.name = "flyscript test"
+        self.assertEqual(inst.name, "flyscript test")
+        inst.save()
+
+
 
 class SharkLiveViewTests(unittest.TestCase):
     def setUp(self):
@@ -752,21 +767,13 @@ class SharkLiveViewTests(unittest.TestCase):
 
         view.close()
 
-    def test_interface_name_change(self):
-        #test on live interface
-        s = self.shark
-        inst = s.get_interfaces()[0]
-        inst.name = "flyscript test"
-        self.assertEqual(inst.name, "flyscript test")
-        inst.save()
-
-
 # this enables scenarios
 #need pip install testscenarios
 # we need scenarios to test over multiple shark (vShark and Shark and maybe Shak+Profiler and
 # Shark+Steelhead
 try:
     import testscenarios
+    scenario_only = True
     vdorothy5 = ('vdorothy5', {'host':'vdorothy5.lab.nbttech.com'})
     oak_mako10 = ('oak-mako10', {'host':'oak-mako10.lab.nbttech.com'})
 
