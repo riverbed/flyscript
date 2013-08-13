@@ -23,43 +23,36 @@ from rvbd.shark.filters import SharkFilter
 
 class ExportApp(SharkApp):
     def add_options(self, parser):
-        parser.add_argument('--filename', dest="filename", default=None,
+        parser.add_option('--filename', dest="filename", default=None,
                             help='export a Trace File')
-        parser.add_argument('--jobname', dest="jobname", default=None,
+        parser.add_option('--jobname', dest="jobname", default=None,
                             help='export a Capture Job')
-        parser.add_argument('--clipname', dest="clipname", default=None,
+        parser.add_option('--clipname', dest="clipname", default=None,
                             help='export a Trace Clip')
-        parser.add_argument('--filter', default=None, help='filter host')
 
     def main(self):
-        # If the user specified a host, create the correspondent filter
-        if self.options.filter is not None:
-            flts = [SharkFilter('ip::ip.str="{0}"'.format(self.args.filter))]
-        else:
-            flts = None
-
+    
         # Do the export based on the specified object type
         if self.options.filename is not None:
             # find the file
-            f = self.shark.get_file(self.args.filename)
+            f = self.shark.get_file(self.options.filename)
 
             # extract the file name from the full path
-            filename = str(file).split('/')[-1]
+            filename = str(f).split('/')[-1]
 
             # export the file
-            f.export(filename + '.pcap', filters=flts)
+            f.download(filename)
         elif self.options.jobname is not None:
             # find the job
             job = self.shark.get_capture_job_by_name(self.options.jobname)
 
-            # extract the job
-            job.export(job.description + '.pcap', filters=flts)
+            job.download(job.id + '.pcap')
         elif self.options.clipname is not None:
             # find the clip
             clip = self.shark.get_trace_clip_by_description(self.options.clipname)
 
             # extract the clip
-            clip.export(clip.description + '.pcap', filters=flts)
+            clip.download(clip.id + '.pcap')
 
 if __name__ == '__main__':
     ExportApp().run()

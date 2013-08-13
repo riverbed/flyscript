@@ -444,11 +444,14 @@ class Shark(Service):
         be added to a clip by right-clicking on it in Pilot.
         """
         if not force_refetch or self._traceclips_cache is None:
-            clips = self._traceclips_cache
+            #get_clips already set up the cache for us
+            clips = self.get_clips(force_refetch)
         else:
-            clips = [ c for c in self.get_clips(force_refetch)
-                 if c.description == description ]
-            self._traceclips_cache = clips
+            clips = self._traceclips_cache
+
+        clips = [ c for c in clips
+                  if c.description == description ]
+            
         if len(clips) == 0:
             raise SharkException('cannot find clip %s' % description)
 
