@@ -180,8 +180,10 @@ class Job4(_interfaces.Job):
             self.data.config = shark.api.jobs.get_config(self.id)
 
     def __repr__(self):
-        return '<Job {0} on {1}>'.format(self.data.config.name,
-                                         self.data.config.interface_description)
+        return '<{0} {1} on {2}>'.format(
+            self.__class__.__name__,
+            self.data.config.name,
+            self.data.config.interface_description)
 
     def __str__(self):
         return '{0}'.format(self.data.config.name)
@@ -233,7 +235,7 @@ class Job4(_interfaces.Job):
         source for this job."""
         interfaces = Interface4.get_all(self.shark)
         for interface in interfaces:
-            if self.data.config.interface_name == interface.name:
+            if self.data.config.interface_name == interface.id:
                 return interface
         ValueError('{0} interface not found'.format(self.data.config.interface_description))
 

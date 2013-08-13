@@ -118,8 +118,14 @@ def setup_capture_job(shark):
     except ValueError:
         #let's create a capture job
         interface = shark.get_interfaces()[0]
-        job = shark.create_job(interface, 'Flyscript-tests-job', '20%', indexing_size_limit='2GB',
+        if shark.model == 'vShark':
+            job = shark.create_job(interface, 'Flyscript-tests-job', '10%', indexing_size_limit='2GB',
                                start_immediately=True)
+        else:
+            job = shark.create_job(interface, 'Flyscript-tests-job', '400MB', indexing_size_limit='300MB',
+                               start_immediately=True) 
+            time.sleep(5)
+            job.stop()
 
     logger.info('using capture job %r' % job)
     return job
@@ -488,7 +494,10 @@ class SharkTests(unittest.TestCase):
 
     def test_shark_interface(self):
         interfaces = self.shark.get_interfaces()
-        interface = self.shark.get_interface_by_name('mon0')
+        try:
+            interface = self.shark.get_interface_by_name('mon0')
+        except:
+            interface = self.shark.get_interfaces()[0]
         try:
             job = self.shark.get_capture_job_by_name('test_shark_interface_job')
             job.delete()
@@ -502,14 +511,22 @@ class SharkTests(unittest.TestCase):
             self.shark.get_clips()
             self.assertNotEqual(self.shark.get_capture_job_by_name('test_shark_interface_job'), None)
             self.assertNotEqual(self.shark.get_trace_clip_by_description('test_shark_interface_clip'), None)
-            self.assertNotEqual(self.shark.get_file('/admin/noon.cap'), None)
+            try:
+                self.assertNotEqual(self.shark.get_file('/admin/noon.cap'), None)
+            except RvbdHTTPException as e:
+                if e.status != 404:
+                    raise
             self.assertNotEqual(self.shark.get_files(), None)
             self.assertNotEqual(self.shark.get_dir('/admin/'), None)
 
         job.delete()
         
     def test_create_job_parameters(self):
-        interface = self.shark.get_interface_by_name('mon0')
+        try:
+            interface = self.shark.get_interface_by_name('mon0')
+        except KeyError:
+            interface = self.shark.get_interfaces()[0]
+
         stats = self.shark.get_stats()
         packet_total_size = stats['storage']['packet_storage'].total
         index_total_size = stats['storage']['os_storage']['index_storage'].total
@@ -576,7 +593,7 @@ class SharkTests(unittest.TestCase):
         shark = self.shark
         fltr = (TimeFilter.parse_range("last 30 m"))
         interface = shark.get_interfaces()[0]
-        job = self.shark.create_job(interface, 'test_loaded_decorator', '300M')
+        job = self.shark.create_job(interface, 'test_loaded_decorator', '300MB')
         with shark.create_clip(job, [fltr], 'test_decorator_clip') as clip:
             #this will test the @loaded decorator
             clip.size
@@ -630,11 +647,12 @@ class SharkTests(unittest.TestCase):
     def test_job_export(self):
         shark = self.shark
         interface = shark.get_interfaces()[0]
-        with self.shark.create_job(interface,
-                                   'test_job_export', '320M',
-                                   indexing_size_limit='1.7GB',
+        # keep this low or you will download too much
+        with self.shark.create_job(interface, \
+                                   'test_job_export', '300MB', \
+                                   indexing_size_limit='30MB', \
                                    start_immediately=True) as job:
-            time.sleep(10)
+            time.sleep(5)
             for x in ['/tmp/test_job_export', '/tmp/trace.pcap']:
                 try:
                     os.remove(x)
