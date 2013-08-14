@@ -203,7 +203,7 @@ class Job4(_interfaces.Job):
     def size_on_disk(self):
         """The capture job actual size, corresponding to the one shown by the
         Shark UI shows."""
-        return self.data.status.packet_size
+        return self.get_status()['packet_size']
 
     @property
     def size_limit(self):
@@ -213,11 +213,11 @@ class Job4(_interfaces.Job):
 
     @property
     def packet_start_time(self):
-        return self.data.status.packet_start_time
+        return self.get_status()['packet_start_time']
 
     @property
     def packet_end_time(self):
-        return self.data.status.packet_end_time
+        return self.get_status()['packet_end_time']
 
     @property
     def interface(self):

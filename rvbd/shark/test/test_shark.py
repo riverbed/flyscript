@@ -518,6 +518,8 @@ class SharkTests(unittest.TestCase):
         # TODO add some equality checks to these
         self.assertTrue(job.get_stats())
         self.assertTrue(job.get_index_info())
+        self.assertTrue(job.packet_start_time <= job.packet_end_time)
+        self.assertTrue(job.size_on_disk <= job.size_limit)
 
         job.delete()
 
@@ -617,9 +619,9 @@ class SharkTests(unittest.TestCase):
     def test_job_export(self):
         shark = self.shark
         interface = shark.get_interfaces()[0]
-        with self.shark.create_job(interface, \
-                                   'test_job_export', '20%', \
-                                   indexing_size_limit='1.7GB', \
+        with self.shark.create_job(interface,
+                                   'test_job_export', '320M',
+                                   indexing_size_limit='1.7GB',
                                    start_immediately=True) as job:
             time.sleep(10)
             for x in ['/tmp/test_job_export', '/tmp/trace.pcap']:
@@ -639,14 +641,14 @@ class SharkTests(unittest.TestCase):
             shutil.rmtree(tempdir)
     
     def test_clip_export(self):
-        shark = self.shark
-        job = shark.get_capture_jobs()[0]
-        clip = create_trace_clip(shark, job)
+        job = self.shark.get_capture_jobs()[0]
+        fltr = TimeFilter.parse_range('last 5 minutes')
+        clip = self.shark.create_clip(job, [fltr], 'test_clip')
+        logger.info('created 5 min trace clip for export test')
         f = clip.download()
         f.close()
         self.assertTrue(os.path.exists(f.name))
         os.remove(f.name)
-            
 
 #    def test_log_download(self):
 #        shark = self.shark
