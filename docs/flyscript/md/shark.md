@@ -142,7 +142,7 @@ Finally, these methods are useful for creating trace clips and
 for downloading raw packets from a capture job.
 
 {method add_clip}
-{method export}
+{method download}
 
 {anchor traceclips ### Trace Clip objects}
 
@@ -167,6 +167,7 @@ Trace clip objects have the following properties:
 
 {method add}
 {method delete}
+{method download}
 
 {anchor extractorobjects ## Extractor Field objects}
 

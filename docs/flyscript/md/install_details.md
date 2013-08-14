@@ -110,16 +110,29 @@ If your machine has access to the internet, then follow these steps:
    script, then double-click the file in your downloads directory.  This should
    automatically determine the best installation for your configuration.
 
-3. Open command-line window (Start -> Search -> cmd.exe)
+3. Add Python to your System Path:
 
-4. Change to your Python Scripts directory and install pip.
+    * Navigate to the Enviroment Variables window via
+      Right-click on "My Computer"->Properties->Advanced->Environment Variables.
+
+    * Add a new item to the "User variables for USERNAME" section in the top part of 
+      the window with the following properties (assumes Python from Step 1 was
+      installed into the default location).  If you already have an item named "Path"
+      there, you can just add a semi-colon (";") and append the following text in the
+      dialog box: <br>
+      Name: Path <br>
+      Value: C:\Python27;C:\Python27\Scripts<br>
+
+4. Open command-line window (Start -> Search -> cmd.exe)
+
+5. Change to your Python Scripts directory and install pip.
 
         :::text
         > cd C:\Python27\Scripts
         > easy_install.exe pip
         ....
 
-5. Use pip to install flyscript.
+6. Use pip to install flyscript.
 
         :::text
         > cd C:\Python27\Scripts

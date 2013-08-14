@@ -13,6 +13,5 @@ Connection
 {method json_request}
 {method upload}
 {method download}
-{method get_raw}
 {method add_headers}
 {method del_headers}
