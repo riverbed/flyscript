@@ -23,7 +23,7 @@ from rvbd.shark.viewutils import write_csv, print_data, OutputMixer
 class ReadView(SharkApp):
     def __init__(self, *args, **kwargs):
         super(ReadView, self).__init__(*args, **kwargs)
-        self.optparse.set_usage('%prog -l SHARK or %prog SHARK VIEWID')
+        self.optparse.set_usage('%prog SHARK <options> -l or %prog SHARK <options> VIEWID')
 
     def add_options(self, parser):
         parser.add_option('-l', action="store_true", dest="listviews", default=False,

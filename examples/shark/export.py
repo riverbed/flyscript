@@ -53,6 +53,8 @@ class ExportApp(SharkApp):
 
             # extract the clip
             clip.download(clip.id + '.pcap')
+        else:
+            print 'No options provided ... use "-h" to see available options.'
 
 if __name__ == '__main__':
     ExportApp().run()

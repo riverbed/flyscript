@@ -24,7 +24,7 @@ def main(app):
     jobs = app.shark.get_capture_jobs()
     if len(jobs) == 0:
         print ("No jobs on the appliance, you can create jobs using the "
-               "'control_job.py' script.")
+               "'create_job.py' and start/stop them using the 'control_job.py' script.")
         return 0
     
     # Pick the first job
@@ -37,7 +37,7 @@ def main(app):
         TimeFilter.parse_range("last 30 m"),
 
         # IP address filter: keep only 192.168.0.1 
-        SharkFilter('ip.str="192.168.0.1"')
+        SharkFilter('ip.src="192.168.0.1"')
     ) 
 
     # Create the clip

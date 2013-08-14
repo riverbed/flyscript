@@ -66,8 +66,7 @@ class CreateJob(SharkApp):
         print 'Source Path: %s' % job.source_path
         print 'Size limit: %s' % job.size_limit
         print 'Current size on disk: %s' % job.size_on_disk
-
-        job.delete()
+        print ''
 
 
 if __name__ == '__main__':

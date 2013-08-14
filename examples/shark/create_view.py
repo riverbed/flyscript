@@ -27,6 +27,14 @@ class CreateView(SharkApp):
     def add_options(self, optparse):
         optparse.add_option('--file', help='filename to open')
 
+    def validate_args(self):
+        """ Ensure columns are included
+        """
+        super(CreateView, self).validate_args()
+
+        if not self.options.file:
+            self.optparse.error('Filename of file on Shark machine required ("--file").')
+
     def main(self):
         # Open the remote file
         source = self.shark.get_file(self.options.file)
@@ -61,7 +69,7 @@ class CreateView(SharkApp):
         # Note that, in addition to the data, we need to provide the legend,
         #  which is necessary to decode it.
         write_csv(CSV_FILE_NAME, v.get_legend(), output)
-        print "view data written to file " + CSV_FILE_NAME
+        print "View data written to file " + CSV_FILE_NAME
 
         # Done! We can close the view.
         v.close()

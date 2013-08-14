@@ -14,6 +14,7 @@ Shark Appliance.
 
 Use the -l option to list the appliance jobs.
 """
+import sys
 
 from rvbd.shark.app import SharkApp
 
@@ -38,17 +39,24 @@ class ControlJob(SharkApp):
 
         if self.options.delete is not None:
             job = self.shark.get_capture_job_by_name(self.options.delete)
+            ans = raw_input('Are you sure you want to delete Job %s [yes/no]: ' % self.options.delete)
+            if ans.lower() != 'yes':
+                print 'Okay, aborting.'
+                sys.exit()
             job.delete()
+            print 'Job %s deleted.' % self.options.delete
             done += 1
 
         if self.options.start is not None:
             job = self.shark.get_capture_job_by_name(self.options.start)
             job.start()
+            print 'Job %s started.' % self.options.start
             done += 1
 
         if self.options.stop is not None:
             job = self.shark.get_capture_job_by_name(self.options.stop)
             job.stop()
+            print 'Job %s stopped.' % self.options.stop
             done += 1
 
         if self.options.clear is not None:
