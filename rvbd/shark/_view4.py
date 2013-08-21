@@ -11,6 +11,7 @@ import json
 import logging
 
 from rvbd.common import timeutils
+from rvbd.common.utils import DictObject
 from rvbd.shark import _interfaces
 from rvbd.shark._class_mapping import path_to_class
 from rvbd.shark._api_helpers import APITimestampFormat
@@ -19,28 +20,28 @@ logger = logging.getLogger(__name__)
 
 def _to_native(string, legend_entry):
     """ convert `string` to an appropriate native type given `legend_entry` """
-    if legend_entry.calculation == 'AVG':
+    if legend_entry['calculation'] == 'AVG':
         string, den = string.split(':', 1)
         denominator = int(den)
     else:
         denominator = 1
     
-    if legend_entry.type.startswith('INT') \
-      or legend_entry.type.startswith('UINT') \
-      or legend_entry.type in ( 'TCP_PORT', 'UDP_PORT'):
-        if legend_entry.base == 'DEC':
+    if legend_entry['type'].startswith('INT') \
+      or legend_entry['type'].startswith('UINT') \
+      or legend_entry['type'] in ( 'TCP_PORT', 'UDP_PORT'):
+        if legend_entry['base'] == 'DEC':
             baseval = 10
-        elif legend_entry.base == 'HEX':
+        elif legend_entry['base'] == 'HEX':
             baseval = 16
         else:
             raise ValueError('do not know how to handle integer base %s' %
-                             legend_entry.base)
+                             legend_entry['base'])
         return int(string, baseval) / denominator
 
-    if legend_entry.type == 'DOUBLE':
+    if legend_entry['type'] == 'DOUBLE':
         return float(string) / denominator
 
-    if legend_entry.type == 'BOOLEAN':
+    if legend_entry['type'] == 'BOOLEAN':
         if string.lower() == 'false' or string.lower() == '0':
             return 0
         elif string.lower() == 'true' or string.lower() == '1':
@@ -49,10 +50,10 @@ def _to_native(string, legend_entry):
             # Booleans can be a count of successes
             return int(string)
 
-    if legend_entry.type == 'ABSOLUTE_TIME':
+    if legend_entry['type'] == 'ABSOLUTE_TIME':
         return timeutils.nsec_string_to_datetime(string)
     
-    if legend_entry.type == 'RELATIVE_TIME':
+    if legend_entry['type'] == 'RELATIVE_TIME':
         return float(string) / denominator
 
     # XXX anything with IPv4 or ETHER?
@@ -193,15 +194,16 @@ class View4(_interfaces.View):
         """
         # check three times before giving up
         count = 0
+        timeinfo = None
         while count < 3:
             res = self.shark.api.view.get_stats(self.handle, timestamp_format=self.timestamp_format)
             timeinfo = res.get('time_details')
             if timeinfo['start'] and timeinfo['end']:
-                return timeinfo
+                return DictObject(timeinfo)
             else:
                 count += 1
                 time.sleep(0.5)
-        return timeinfo
+        return DictObject(timeinfo)
 
     def _poll_completion(self):
         while True:
@@ -240,10 +242,10 @@ class View4(_interfaces.View):
         100% """
 
         stats = self.shark.api.view.get_stats(self.handle, timestamp_format=self.timestamp_format)
-        if stats.state == 'DONE' or stats.input_size == 0:
+        if stats['state'] == 'DONE' or stats['input_size'] == 0:
             return 100
-        if stats.input_size != 0:
-            return int(float(stats.processed_size)/stats.input_size * 100)
+        if stats['input_size'] != 0:
+            return int(float(stats['processed_size'])/stats['input_size'] * 100)
         
 
 class Output4(_interfaces.Output):

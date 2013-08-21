@@ -154,8 +154,8 @@ class SharkTests(SetUpTearDownMixin, testscenarios.TestWithScenarios):
             legend = v.get_legend()
             for col in legend:
                 # make sure we have name and description attributes
-                self.assertTrue(col.name)
-                self.assertTrue(col.description)
+                self.assertTrue(col['name'])
+                self.assertTrue(col['description'])
 
             for row in v.get_data():
                 self.assertTrue(isinstance(row['t'], datetime.datetime))
@@ -426,9 +426,8 @@ class SharkTests(SetUpTearDownMixin, testscenarios.TestWithScenarios):
             interface = self.shark.get_interfaces()[0]
 
         stats = self.shark.get_stats()
-        packet_total_size = stats['storage']['packet_storage'].total
-        index_total_size = stats['storage']\
-            ['os_storage']['index_storage'].total
+        packet_total_size = stats['storage']['packet_storage']['total']
+        index_total_size = stats['storage']['os_storage']['index_storage']['total']
         try:
             job = self.shark.get_capture_job_by_name(
                 'test_create_job_with_parameters')
@@ -441,8 +440,8 @@ class SharkTests(SetUpTearDownMixin, testscenarios.TestWithScenarios):
             '20%', indexing_size_limit='1.7GB',
             start_immediately=True)
         self.assertEqual(job.size_limit, packet_total_size * 20/100)
-        self.assertTrue(job.data.config.indexing.size_limit < 1.7*1024**3)
-        self.assertTrue(job.data.config.indexing.size_limit > 1.6*1024**3)
+        self.assertTrue(job.data.config['indexing']['size_limit'] < 1.7*1024**3)
+        self.assertTrue(job.data.config['indexing']['size_limit'] > 1.6*1024**3)
         self.assertEqual(job.interface.name, interface.name)
         self.assertEqual(job.get_state(), 'RUNNING')
         # TODO add some equality checks to these
@@ -459,10 +458,8 @@ class SharkTests(SetUpTearDownMixin, testscenarios.TestWithScenarios):
             packet_retention_time_limit=datetime.timedelta(days=7),
             start_immediately=True)
         self.assertEqual(job.size_limit, packet_total_size * 20/100)
-        self.assertTrue(
-            job.data.config.indexing.size_limit < index_total_size * 11/100)
-        self.assertTrue(
-            job.data.config.indexing.size_limit > index_total_size * 9/100)
+        self.assertTrue(job.data.config['indexing']['size_limit'] < index_total_size * 11/100)
+        self.assertTrue(job.data.config['indexing']['size_limit'] > index_total_size * 9/100)
         job.delete()
 
         #test contextual manager

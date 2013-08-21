@@ -29,11 +29,11 @@ class API4Group(APIGroup):
         urlpath = urllib.quote(urlpath)
 
         if as_json:
-            return self.shark.conn.json_request(self.uri_prefix + urlpath, method=method,
-                                                  data=data, params=params, extra_headers=headers)
+            return self.shark.conn.json_request(method, uri=self.uri_prefix + urlpath,
+                                                body=data, params=params, extra_headers=headers)
         else:
-            return self.shark.conn.xml_request(self.uri_prefix + urlpath, method=method,
-                                                 body=data, check_result=True,
+            return self.shark.conn.xml_request(method, uri=self.uri_prefix + urlpath,
+                                                 body=data,
                                                  params=params, extra_headers=headers)
 
     def add_base_header(self, key, value=""):

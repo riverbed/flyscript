@@ -39,7 +39,7 @@ class Interface4(_interfaces._InputSource):
     @property
     def description(self):
         """The interface description."""
-        return self.data.description
+        return self.data['description']
 
     def is_live(self):
         """Can be used to determine if a source object is live or offline.
@@ -98,14 +98,14 @@ class Clip4(_interfaces.Clip):
     def description(self):
         """Returns the description of the clip
         """
-        return self.data.config.description
+        return self.data['config']['description']
 
     @property
     @loaded
     def size(self):
         """Returns the size of the clip
         """
-        return self.data.status.estimated_size
+        return self.data['status']['estimated_size']
 
     def delete(self):
         """Erase the clip from shark
@@ -192,7 +192,7 @@ class Job4(_interfaces.Job):
 
     @loaded
     def __str__(self):
-        return '{0}'.format(self.data.config.name)
+        return '{0}'.format(self.data['config']['name'])
 
     @property
     def source_path(self):
@@ -215,7 +215,7 @@ class Job4(_interfaces.Job):
     @loaded
     def name(self):
         """The capture job name"""
-        return self.data.config.name
+        return self.data['config']['name']
 
     @property
     @loaded
@@ -229,7 +229,7 @@ class Job4(_interfaces.Job):
     def size_limit(self):
         """The capture job maximum size, corresponding to the one shown by the
         Shark UI shows."""
-        return self.data.config.packet_retention.size_limit
+        return self.data['config']['packet_retention']['size_limit']
 
     @property
     def packet_start_time(self):
@@ -247,14 +247,14 @@ class Job4(_interfaces.Job):
         for interface in interfaces:
             if self.data.config.interface_name == interface.id:
                 return interface
-        ValueError('{0} interface not found'.format(self.data.config.interface_description))
+        ValueError('{0} interface not found'.format(self.data['config']['interface_description']))
 
     @property
     def handle(self):
         """The internal capture job handle. The handle is sometimes required
         for advanced operations on the job.
         """
-        return self.data.id
+        return self.data['id']
 
 
     @classmethod
@@ -299,8 +299,8 @@ class Job4(_interfaces.Job):
             return size
 
         stats = shark.get_stats()
-        packet_storage_total = stats['storage']['packet_storage'].total
-        index_storage_total = stats['storage']['os_storage']['index_storage'].total
+        packet_storage_total = stats['storage']['packet_storage']['total']
+        index_storage_total = stats['storage']['os_storage']['index_storage']['total']
  
         packet_retention_size_limit = _calc_size(packet_retention_size_limit, packet_storage_total) if packet_retention_size_limit else None
         stop_rule_size_limit = _calc_size(stop_rule_size_limit, packet_storage_total) if stop_rule_size_limit else None

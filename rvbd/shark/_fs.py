@@ -197,7 +197,7 @@ class Directory4(_FSResource):
         super(Directory4, self).__init__(shark, d)
 
     def __repr__(self):
-        return "<Directory path='{0}'>".format(self.data.id)
+        return "<Directory path='{0}'>".format(self.data['id'])
 
     def _process_json_directories(self, json_data):
         """Process a json representing the directories
