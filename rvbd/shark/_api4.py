@@ -159,11 +159,11 @@ class Settings(API4Group):
 
     def send_test_email(self, config, as_json=True, timestamp_format=APITimestampFormat.NANOSECOND):
         """ Send a test email using the given config"""
-        params = {
-            "test_settings" : True
-            }
-        return self._xjtrans("/settings/notification", "POST", config, as_json, timestamp_format,
-                             params=params)
+        return self._xjtrans("/settings/notification/send_test_mail", "POST", config, as_json, timestamp_format)
+
+    def send_test_trap(self, config, as_json=True, timestamp_format=APITimestampFormat.NANOSECOND):
+        return self._xjtrans('/settings/notificaton/send_test_trap', "POST", config, as_json, timestamp_format)
+
 
     def get_profiler_export(self, as_json=True, timestamp_format=APITimestampFormat.NANOSECOND):
         """Get the profiler export
