@@ -8,7 +8,17 @@
 from rvbd.shark import _source4 as s4
 
 class Job5(s4.Job4):
-    pass
+    @property
+    def dpi_enabled(self):
+        return self.data['dpi_enabled']
+
+    @dpi_enabled.setter
+    def dpi_enabled(self, value):
+        self.data['dpi_enabled'] = True
+
+    def save(self):
+        data = self.data.copy()
+        self.api.update(self.id, data)
 
 class Interface5(s4.Interface4):    
 
