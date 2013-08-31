@@ -173,6 +173,7 @@ class Job4(_interfaces.Job):
 
     def __init__(self, shark, data):
         super(Job4, self).__init__(shark, data)
+        self.api = shark.api.jobs
         self.id = self.data.id
         self.index_enabled = True
 

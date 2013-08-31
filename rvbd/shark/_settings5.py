@@ -6,6 +6,7 @@
 # This software is distributed "AS IS" as set forth in the License.
 
 from _settings4 import Settings4
+from _interfaces import loaded
 
 #there is no functional need to put this class nested into Settings5 class
 #leaving it as module object to simplify reuse and modularizzation
@@ -18,9 +19,7 @@ class Dpi(object):
         self.data = None
 
 class ProfilerExport(Settings4.ProfilerExport):
-    def _load(self):for p in self.data.profilers:
-            if p.address == address
-        
+    def _load(self):
         self.data = self.shark.api.settings.get_profiler_export()
         #for backward compatibility with Settings4
         self._settings = self.data
@@ -53,6 +52,6 @@ class Settings5(Settings4):
     '''Interface to various configuration settings on the shark appliance. Version 5.0 API'''    
 
     def __init__(self, shark):
-        super(Settings5, self).__init__()
+        super(Settings5, self).__init__(shark)
         self.dpi = Dpi(shark)
         self.profiler_export = ProfilerExport(shark)

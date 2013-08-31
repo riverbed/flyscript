@@ -5,20 +5,30 @@
 #   https://github.com/riverbed/flyscript/blob/master/LICENSE ("License").  
 # This software is distributed "AS IS" as set forth in the License.
 
+from rvbd.common.exceptions import *
 from rvbd.shark import _source4 as s4
 
 class Job5(s4.Job4):
     @property
     def dpi_enabled(self):
-        return self.data['dpi_enabled']
+        return self.data['config']['indexing']['dpi_enabled']
 
     @dpi_enabled.setter
     def dpi_enabled(self, value):
-        self.data['dpi_enabled'] = True
+        self.data['config']['indexing']['dpi_enabled'] = True
 
     def save(self):
-        data = self.data.copy()
+        data = self.data['config'].copy()
+        state = self.data['status']['state']
+        try:
+            self.stop()
+        except RvbdHTTPException:
+            #it's all good, the job was already STOPPED
+            pass
         self.api.update(self.id, data)
+        if state != "STOPPED":
+            self.api.state_update(self.id, {'state':state})
+        
 
 class Interface5(s4.Interface4):    
 
