@@ -5,7 +5,15 @@
 #   https://github.com/riverbed/flyscript/blob/master/LICENSE ("License").  
 # This software is distributed "AS IS" as set forth in the License.
 
+import functools
 
+def getted(f):
+    @functools.wraps(f)
+    def wrapper(self, *args, **kwds):
+        if self._settings is None:
+            raise LookupError('You have to get the configuration first via the get method')
+        return f(self, *args, **kwds)
+    return wrapper
 
 class Settings4(object):
     '''Interface to various configuration settings on the shark appliance.'''
@@ -16,76 +24,70 @@ class Settings4(object):
             self.shark = shark
             self._settings = None
 
-        def _get(self):
+        def get(self):
             if self._settings is None:
                 self._settings = self.shark.api.settings.get_basic()
-            
-        def _update(self):
-            self.shark.api.settings.update_basic(self._settings)
-            
-        def hostname(self):
-            self._get()
-            return self._settings.hostname
-        
-        def update_hostname(self, hostname):
-            self._get()
-            self._settings.hostname = hostname
-            self._update()
-        
-        def domain(self):
-            self._get()
-            return self._settings.domain
-        
-        def set_domain(self, domain):
-            self._get()
-            self._settings.domain = domain
-            self._update()
 
+        @getted
+        def update(self):
+            self.shark.api.settings.update_basic(self._settings)
+
+        @getted    
+        def hostname(self):
+            return self._settings.hostname
+
+        @getted        
+        def update_hostname(self, hostname):
+            self._settings.hostname = hostname
+
+        @getted
+        def domain(self):
+            return self._settings.domain
+
+        @getted
+        def set_domain(self, domain):
+            self._settings.domain = domain
+
+        @getted
         def dns_servers(self):
-            self._get()
             return (self._settings.primary_dns, self._settings.secondary_dns)
-        
+
+        @getted
         def set_dns_servers(self, primary_dns="", secondary_dns=""):
-            self._get()
             self._settings.primary_dns = primary_dns
             self._settings.secondary_dns = secondary_dns
-            self._update()
 
+        @getted
         def ssh_enabled(self):
-            self._get()
             return self._settings.ssh_enabled
-        
+
+        @getted
         def set_ssh_enabled(self, ssh_enabled):
-            self._get()
             self._settings.ssh_enabled = ssh_enabled
-            self._update()
 
+        @getted
         def fips_enabled(self):
-            self._get()
             return self._settings.fips_enabled
-        
+
+        @getted
         def set_fips_enabled(self, fips_enabled):
-            self._get()
             self._settings.fips_enabled = fips_enabled
-            self._update()
 
+        @getted
         def timezone(self):
-            self._get()
             return self._settings.timezone
-        
-        def set_timezone(self, timezone):
-            self._get()
-            self._settings.timezone = timezone
-            self._update()
 
+        @getted
+        def set_timezone(self, timezone):
+            self._settings.timezone = timezone
+
+        @getted
         def ntp_servers(self):
-            self._get()
             return self._settings.ntp_config.servers
 
+        @getted
         def set_ntp_servers(self, servers):
-            self._get()
             self._settings.ntp_config.servers = servers
-            self._update()
 
     class Auth:
         """Wrapper class around authentication settings.
@@ -105,24 +107,20 @@ class Settings4(object):
         def __init__(self, shark):
             self.shark = shark
             self._settings = None
-            self.update_immediately = True
 
-        def _get(self):
+        def get(self):
             if self._settings is None:
                 self._settings = self.shark.api.settings.get_auth()
 
+        @getted
         def update(self):
-            '''Force apply any setting changes'''
-            self._update(force=True)
-            
-        def _update(self, force=False):
-            if force or self.update_immediately:
-                self.shark.api.settings.update_auth(self._settings)
-            
+            self.shark.api.settings.update_auth(self._settings)
+
+        @getted
         def local_settings(self):
-            self._get()
             return self._settings.local_settings
 
+        @getted
         def set_local_settings(self,
                                min_password_length = 0,
                                password_change_history = 0,
@@ -132,7 +130,7 @@ class Settings4(object):
                                min_password_lower_letter = 0,
                                max_password_lifetime_days = 0,
                                min_password_numeric_character = 0):
-            self._get()
+
             self._settings.local_settings.min_password_length = min_password_length
             self._settings.local_settings.password_change_history = password_change_history
             self._settings.local_settings.min_password_special_character = min_password_special_character
@@ -141,13 +139,13 @@ class Settings4(object):
             self._settings.local_settings.min_password_lower_letter = min_password_lower_letter
             self._settings.local_settings.max_password_lifetime_days = max_password_lifetime_days
             self._settings.local_settings.min_password_numeric_character = min_password_numeric_character
-            self._update()
 
 
+        @getted
         def radius_settings(self):
-            self._get()
             return self._settings.radius_settings
 
+        @getted
         def set_radius_settings(self,
                                 servers,
                                 client_port="na",
@@ -163,17 +161,16 @@ class Settings4(object):
             encryption_protocol: XXX
             accounting_enabled: XXX
             '''
-            self._get()
             self._settings.radius_settings.servers = servers
             self._settings.radius_settings.client_port = client_port
             self._settings.radius_settings.encryption_protocol = encryption_protocol
             self._settings.radius_settings.accounting_enabled = accounting_enabled
-            self._update()
 
+        @getted
         def tacacs_settings(self):
-            self._get()
             return self._settings.tacacs_settings
 
+        @getted
         def set_tacacs_settings(self,
                                 servers,
                                 accounting_terminator = "2>&1",
@@ -192,7 +189,6 @@ class Settings4(object):
 
             '''
             
-            self._get()
             self._settings.tacacs_settings.servers = servers
             self._settings.tacacs_settings.accounting_terminator = accounting_terminator
             self._settings.tacacs_settings.accounting_enabled = accounting_enabled
@@ -202,37 +198,33 @@ class Settings4(object):
             self._settings.tacacs_settings.authorization_response_attribute = authorization_response_attribute
             self._settings.tacacs_settings.authorization_attribute = authorization_attribute
             self._settings.tacacs_settings.accounting_attribute = accounting_attribute
-            self._update()
 
+        @getted
         def auth_sequence(self):
-            self._get()
             return self._settings.auth_sequence
 
+        @getted
         def set_auth_sequence(self, modes):
-            self._get()
             self._settings.auth_sequence = modes
-            self._update()
 
+        @getted
         def remote_auth_settings(self):
-            self._get()
             return self._settings.remote_auth_settings
 
+        @getted
         def set_remote_auth_settings(self, fallback_on_unavailable_only, default_group=""):
-            self._get()
             self._settings.remote_auth_settings.fallback_on_unavailable_only = fallback_on_unavailable_only
             self._settings.remote_auth_settings.default_group = default_group
-            self._update()
 
+        @getted
         def webui_settings(self):
-            self._get()
             return self._settings.webui_settings
 
+        @getted
         def set_webui_settings(self, login_banner="", need_purpose=False, session_duration=60):
-            self._get()
             self._settings.webui_settings.login_banner = login_banner
             self._settings.webui_settings.need_purpose = need_purpose
             self._settings.webui_settings.session_duration = session_duration
-            self._update()
 
     class Audit:
         """Wrapper class around audit configuration.
@@ -252,82 +244,73 @@ class Settings4(object):
         def __init__(self, shark):
             self.shark = shark
             self.categories = None
-            self.update_immediately = True
+            self._settings = None
 
-        def _get(self):
+        def get(self):
             if self.categories is None:
                 self.categories = {}
-                settings = self.shark.api.settings.get_audit()
-                for c in settings.audit_categories:
+                self._settings = self.shark.api.settings.get_audit()
+                for c in self._settings.audit_categories:
                     self.categories[c.audit_type] = c
-                
-        def update(self):
-            '''Force apply any setting changes'''
-            self._update(force=True)
-            
-        def _update(self, force=False):
-            if force or self.update_immediately:
-                self.shark.api.settings.update_audit({'audit_categories' : self.categories.values()})
 
+        @getted
+        def update(self, force=False):
+            self.shark.api.settings.update_audit({'audit_categories' : self.categories.values()})
+
+        @getted
         def get_category_settings(self, category):
             '''Return a reference to the current settings for the given category.'''
-            self._get()
             return self.categories[category]
 
+        @getted
         def update_category_settings(self, category, min_syslog_level, min_remote_server_level):
             '''Return a reference to the current settings for the given category.'''
-            self._get()
             self.categories[category].min_syslog_level = min_syslog_level
             self.categories[category].min_remote_server_level = min_remote_server_level
-            self._update()
 
+        @getted
         def get_category_descriptions(self):
             '''Return a list of (category, description) pairs containing
             the description for each audit category.'''
-            self._get()
             return [(c.audit_type, c.description) for c in self.categories.values()]
 
+        @getted
         def get_syslog_levels(self):
             '''Return a list of (category, level) pairs containing the
             currently enabled syslog level for each audit category.'''
-            self._get()
             return [(c.audit_type, c.min_syslog_level) for c in self.categories.values()]
 
+        @getted
         def update_syslog_levels(self, levels):
             '''Given a list of (category, level) pairs, updates the min
             syslog levels for each of the given categories.'''
-            self._get()
             for category, level in levels:
                 self.categories[category].min_syslog_level = level
-            self._update()
 
+        @getted
         def update_all_syslog_levels(self, level):
             '''Update the syslog level for all categories to the given level'''
-            self._get()
             for c in self.categories:
                 c.min_syslog_level = level
-            self._update()
-                    
+
+        @getted
         def get_remote_server_levels(self):
             '''Return a list of (category, level) pairs containing the
             currently enabled remote_server level for each audit category.'''
-            self._get()
             return [(c.audit_type, c.min_remote_server_level) for c in self.categories.values()]
 
+        @getted
         def update_remote_server_levels(self, levels):
             '''Given a list of (category, level) pairs, updates the min
             remote_server levels for each of the given categories.'''
-            self._get()
             for category, level in levels:
                 self.categories[category].min_remote_server_level = level
-            self._update()
 
+        @getted
         def update_all_remote_server_levels(self, level):
             '''Update the remote_server level for all categories to the given level'''
-            self._get()
             for c in self.categories:
                 c.min_remote_server_level = level
-            self._update()
                     
     class Licenses:
         '''Wrapper class around license configuration'''
@@ -358,41 +341,35 @@ class Settings4(object):
         def __init__(self, shark):
             self.shark = shark
             self._firewall_config = None
-            self.update_immediately = True
+            self._settings = None
 
+        @getted
         def firewall_settings(self):
-            self._get(force=True)
             return self._firewall_config
  
-        def _get(self, force=False):
-            if force or self._firewall_config is None:
-                config_dict = self.shark.api.settings.get_firewall_config()
-                self._firewall_config = self.FirewallConfig(config_dict["firewall_enabled"],
-                                                       config_dict["default_policy"],
-                                                       config_dict["rules"])
+        def get(self):
+            config_dict = self.shark.api.settings.get_firewall_config()
+            self._settings = config_dict
+            self._firewall_config = self.FirewallConfig(config_dict["firewall_enabled"],
+                                                        config_dict["default_policy"],
+                                                        config_dict["rules"])
 
-        def update(self):
-            '''Force apply any setting changes'''
-            self._update(force=True)
+        @getted
+        def update(self, force=False):
+            config_dict = {"firewall_enabled": self._firewall_config.enabled,
+                           "default_policy" :self._firewall_config.default_policy,
+                           "rules" :self._firewall_config.rules
+                           }
+            self.shark.api.settings.update_firewall_config(config_dict)
 
-        def _update(self, force=False):
-            if force or self.update_immediately:
-                config_dict = {"firewall_enabled": self._firewall_config.enabled,
-                               "default_policy" :self._firewall_config.default_policy,
-                               "rules" :self._firewall_config.rules
-                               }
-                self.shark.api.settings.update_firewall_config(config_dict)
-                self._get(force=True)
-
+        @getted
         def set_firewall_settings(self, firewall_config):
             '''
             Update the firewall configuration
 
             firewall_config: the new configuration to set
             '''
-            self._get()
             self._firewall_config = firewall_config
-            self._update()
 
 
         class FirewallConfig:
@@ -463,7 +440,7 @@ class Settings4(object):
         def __init__(self, shark):
             self.shark = shark
     
-        def get_certificates_config(self):
+        def get(self):
             return self.shark.api.certificates.get_certificates_config()
 
     class ProfilerExport:
@@ -484,84 +461,73 @@ class Settings4(object):
         def __init__(self, shark):
             self.shark = shark
             self._settings = None
-            self.update_immediately = True
 
-        def _get(self, force=False):
-            if force or self._settings is None:
-                self._settings = self.shark.api.settings.get_profiler_export()
+        def get(self):
+            self._settings = self.shark.api.settings.get_profiler_export()
 
+        @getted    
         def update(self):
-            '''Force apply any setting changes'''
-            self._update(force=True)
-            
-        def _update(self, force=False):
-            if force or self.update_immediately:
-                self.shark.api.settings.update_profiler_export(self._settings)
+            self.shark.api.settings.update_profiler_export(self._settings)
 
+        @getted    
         def enabled(self):
             """Return whether or not profiler export is enabled"""
-            self._get()
             return self._settings.enabled
-        
+
+        @getted
         def enable(self):
             """Enable profiler export"""
-            self._get()
             self._settings.enabled = True
-            self._update()
-            
+
+        @getted    
         def disable(self):
             """Disable profiler export"""
-            self._get()
             self._settings.enabled = False
-            self._update()
-            
+
+        @getted    
         def get_profilers(self):
             """Return a list of (address, status) pairs for all enabled profilers."""
-            self._get()
             return [(p.address, p.status) for p in self._settings.profilers]
 
+        @getted    
         def add_profiler(self, address):
-            self._get()
             if len(self._settings.profilers) == 2:
                 raise ValueError("Only two profilers can be enabled")
             self._settings.profilers.append({'address' : address})
-            self._update()
-            self._get(force=True)
-        
+
+        @getted    
         def remove_profiler(self, address):
-            self._get()
             for p in self._settings.profilers:
-                if p.address == address:
+                if p['address'] == address:
                     self._settings.profilers.remove(p)
                     # Check if there is no Profiler set
                     if len(self._settings.profilers) == 0:
                         # If no profiler is available Profiler Export should be disabled 
                         self._settings.enabled = False
-                    self._update()
                     return
             raise ValueError("No profiler enabled with address %s" % address)
 
+        @getted    
         def remove_all_profilers(self):
-            self._get()
             self._settings.profilers = []
             self._settings.enabled = False
-            self._update()
 
+        @getted    
         def enabled_ports(self):
             """Return a list of all ports for which profiler export is enabled."""
-            self._get()
             return [port.name for port in self._settings.adapter_ports if port.enabled]
 
+        @getted    
         def disabled_ports(self):
             """Return a list of all ports for which profiler export is not enabled."""
-            self._get()
             return [port.name for port in self._settings.adapter_ports if not port.enabled]
 
+        @getted        
         def enable_port(self, name, bpf_filter=None, voip_enabled=None):
             """Enable the given port for profiler export, optionally
             setting the given BPF filter and whether or not voip
             metrics should be enabled."""
-            self._get()
+
             for port in self._settings.adapter_ports:
                 if port.name == name:
                     port.enabled = True
@@ -569,22 +535,20 @@ class Settings4(object):
                         port.BPF_filter = bpf_filter
                     if voip_enabled is not None:
                         port.VoIP_enabled = voip_enabled
-                    self._update()
                     return
 
             raise ValueError("Invalid port " + port)
-            
+
+        @getted    
         def disable_port(self, name):
-            self._get()
             for port in self._settings.adapter_ports:
                 if port.name == name:
                     port.enabled = False
-                    self._update()
                     return
             raise ValueError("Invalid port " + port)
 
+        @getted    
         def get_port_config(self, name):
-            self._get()
             for port in self._settings.adapter_ports:
                 if port.name == name:
                     return port

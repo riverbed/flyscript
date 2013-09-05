@@ -424,6 +424,7 @@ class SharkTests(SetUpTearDownMixin, unittest.TestCase):
     def test_profiler_export(self):
         shark = self.shark
         pe = shark.settings.profiler_export
+        pe.get()
         try:
             pe.remove_profiler('tm08-1.lab.nbttech.com')
         except (RvbdHTTPException, ValueError):
@@ -432,11 +433,13 @@ class SharkTests(SetUpTearDownMixin, unittest.TestCase):
         pe.enable()
         pe.disable()
         pe.remove_profiler('tm08-1.lab.nbttech.com')
+        pe.update()
 
     def test_profiler_export_remove(self):
         shark = self.shark
         pe = shark.settings.profiler_export
-        
+        pe.get()
+
         # Remove all Profilers
         pe.remove_all_profilers()
         
@@ -446,6 +449,7 @@ class SharkTests(SetUpTearDownMixin, unittest.TestCase):
         
         # Remove the only profiler export
         pe.remove_profiler('tm08-1.lab.nbttech.com')
+        pe.update()
         
         # Check there is no profiler
         assert shark.settings.profiler_export.get_profilers() == []
@@ -454,7 +458,7 @@ class SharkTests(SetUpTearDownMixin, unittest.TestCase):
     def test_profiler_export_remove_all(self):
         shark = self.shark
         pe = shark.settings.profiler_export
-        
+        pe.get()
         # Add two Profilers
         pe.add_profiler('tm08-1.lab.nbttech.com')
         pe.add_profiler('doesnotexist.lab.nbttech.com')
@@ -462,6 +466,7 @@ class SharkTests(SetUpTearDownMixin, unittest.TestCase):
         
         # Remove all Profilers
         pe.remove_all_profilers()
+        pe.update()
         
         # Check there is no profiler        
         assert shark.settings.profiler_export.get_profilers() == []
