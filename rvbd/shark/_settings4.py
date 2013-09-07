@@ -32,59 +32,73 @@ class Settings4(object):
         def update(self):
             self.shark.api.settings.update_basic(self._settings)
 
+        @property
         @getted    
         def hostname(self):
             return self._settings.hostname
 
+        @hostname.setter
         @getted        
         def update_hostname(self, hostname):
             self._settings.hostname = hostname
 
+        @property
         @getted
         def domain(self):
             return self._settings.domain
 
+        @domain.setter
         @getted
         def set_domain(self, domain):
             self._settings.domain = domain
 
+        @property
         @getted
         def dns_servers(self):
             return (self._settings.primary_dns, self._settings.secondary_dns)
 
+        @dns_servers.setter
         @getted
         def set_dns_servers(self, primary_dns="", secondary_dns=""):
             self._settings.primary_dns = primary_dns
             self._settings.secondary_dns = secondary_dns
 
+        @property
         @getted
         def ssh_enabled(self):
             return self._settings.ssh_enabled
 
+        @ssh_enabled.setter
         @getted
         def set_ssh_enabled(self, ssh_enabled):
             self._settings.ssh_enabled = ssh_enabled
 
+        @property
         @getted
         def fips_enabled(self):
             return self._settings.fips_enabled
 
+        @fips_enabled.setter
         @getted
         def set_fips_enabled(self, fips_enabled):
             self._settings.fips_enabled = fips_enabled
 
+        @property
         @getted
         def timezone(self):
             return self._settings.timezone
 
+        @timezone.setter
         @getted
         def set_timezone(self, timezone):
             self._settings.timezone = timezone
 
+        @property
         @getted
         def ntp_servers(self):
             return self._settings.ntp_config.servers
 
+        @ntp_servers.setter
         @getted
         def set_ntp_servers(self, servers):
             self._settings.ntp_config.servers = servers
@@ -116,10 +130,12 @@ class Settings4(object):
         def update(self):
             self.shark.api.settings.update_auth(self._settings)
 
+        @property
         @getted
         def local_settings(self):
             return self._settings.local_settings
 
+        @local_settings.setter
         @getted
         def set_local_settings(self,
                                min_password_length = 0,
@@ -141,10 +157,12 @@ class Settings4(object):
             self._settings.local_settings.min_password_numeric_character = min_password_numeric_character
 
 
+        @property
         @getted
         def radius_settings(self):
             return self._settings.radius_settings
 
+        @radius_settings.setter
         @getted
         def set_radius_settings(self,
                                 servers,
@@ -166,10 +184,12 @@ class Settings4(object):
             self._settings.radius_settings.encryption_protocol = encryption_protocol
             self._settings.radius_settings.accounting_enabled = accounting_enabled
 
+        @property
         @getted
         def tacacs_settings(self):
             return self._settings.tacacs_settings
 
+        @tacacs_settings.setter
         @getted
         def set_tacacs_settings(self,
                                 servers,
@@ -199,27 +219,33 @@ class Settings4(object):
             self._settings.tacacs_settings.authorization_attribute = authorization_attribute
             self._settings.tacacs_settings.accounting_attribute = accounting_attribute
 
+        @property
         @getted
         def auth_sequence(self):
             return self._settings.auth_sequence
 
+        @auth_sequence.setter
         @getted
         def set_auth_sequence(self, modes):
             self._settings.auth_sequence = modes
 
+        @property
         @getted
         def remote_auth_settings(self):
             return self._settings.remote_auth_settings
 
+        @remote_auth_settings.setter
         @getted
         def set_remote_auth_settings(self, fallback_on_unavailable_only, default_group=""):
             self._settings.remote_auth_settings.fallback_on_unavailable_only = fallback_on_unavailable_only
             self._settings.remote_auth_settings.default_group = default_group
 
+        @property
         @getted
         def webui_settings(self):
             return self._settings.webui_settings
 
+        @webui_settings.setter
         @getted
         def set_webui_settings(self, login_banner="", need_purpose=False, session_duration=60):
             self._settings.webui_settings.login_banner = login_banner
@@ -258,7 +284,7 @@ class Settings4(object):
             self.shark.api.settings.update_audit({'audit_categories' : self.categories.values()})
 
         @getted
-        def get_category_settings(self, category):
+        def category_settings(self, category):
             '''Return a reference to the current settings for the given category.'''
             return self.categories[category]
 
@@ -275,7 +301,7 @@ class Settings4(object):
             return [(c.audit_type, c.description) for c in self.categories.values()]
 
         @getted
-        def get_syslog_levels(self):
+        def syslog_levels(self):
             '''Return a list of (category, level) pairs containing the
             currently enabled syslog level for each audit category.'''
             return [(c.audit_type, c.min_syslog_level) for c in self.categories.values()]
@@ -294,7 +320,7 @@ class Settings4(object):
                 c.min_syslog_level = level
 
         @getted
-        def get_remote_server_levels(self):
+        def remote_server_levels(self):
             '''Return a list of (category, level) pairs containing the
             currently enabled remote_server level for each audit category.'''
             return [(c.audit_type, c.min_remote_server_level) for c in self.categories.values()]
@@ -317,19 +343,23 @@ class Settings4(object):
         def __init__(self, shark):
             self.shark = shark
 
-        def get_all(self):
+        def get(self):
             return [lic.key for lic in self.shark.api.licenses.get_all()]
 
+        @getted
         def add(self, license_keys):
             self.shark.api.licenses.add_license(license_keys)
 
+        @getted
         def remove(self, key):
             self.shark.api.licenses.delete_license(key)
-    
+
+        @getted
         def clear(self):
             for lic in self.get_all():
                 self.shark.api.licenses.delete_license(lic)
 
+        @getted
         def status(self):
             return self.shark.api.licenses.get_status()
 
@@ -343,6 +373,7 @@ class Settings4(object):
             self._firewall_config = None
             self._settings = None
 
+        @property
         @getted
         def firewall_settings(self):
             return self._firewall_config
@@ -362,6 +393,7 @@ class Settings4(object):
                            }
             self.shark.api.settings.update_firewall_config(config_dict)
 
+        @firewall_settings.setter
         @getted
         def set_firewall_settings(self, firewall_config):
             '''
@@ -553,12 +585,16 @@ class Settings4(object):
                 if port.name == name:
                     return port
             raise ValueError("No such port %s" % port)
-            
-    def get_cors_domains(self):
+
+    @property
+    @getted
+    def cors_domains(self):
         '''Return the list of allowed domains for cross-origin
         resource access.'''
         return self.shark.api.settings.get_cors_domains()
 
+    @cors_domains.setter
+    @getted
     def update_cors_domains(self, domains):
         '''Update the list of allowed domains for cross-origin
         resource access.'''

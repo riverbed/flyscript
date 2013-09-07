@@ -7,6 +7,7 @@
 
 from _api_helpers import APIGroup, APITimestampFormat
 from _api4 import API4_0
+import urllib
 
 class API5Group(APIGroup):
     base_headers = {}
@@ -91,10 +92,10 @@ class API5_0(API4_0):
 
     def __init__(self, shark):
         super(API5_0, self).__init__(shark)
-        self.port_definitions = PortDefinitions('api/shark/'+self.version+'/definitions', self.shark)
-        self.port_groups = PortGroups('api/shark/'+self.version+'/definitions', self.shark)
-        self.l4_mapping = L4Mappings('api/shark/'+self.version+'/definitions', self.shark)
-        self.custom_applications = CustomApplications('api/shark/'+self.version+'/definitions', self.shark)
-        self.srt_ports = SrtPorts('api/shark/'+self.version+'/definitions', self.shark)
+        self.port_definitions = PortDefinitions('/api/shark/'+self.version+'/definitions', shark)
+        self.port_groups = PortGroups('/api/shark/'+self.version+'/definitions', shark)
+        self.l4_mappings = L4Mappings('/api/shark/'+self.version+'/definitions', shark)
+        self.custom_applications = CustomApplications('/api/shark/'+self.version+'/definitions', shark)
+        self.srt_ports = SrtPorts('/api/shark/'+self.version+'/definitions', shark)
 
 __all__ = ['API5_0']
