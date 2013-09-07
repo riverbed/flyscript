@@ -57,3 +57,21 @@ class Dpi(SetUpTearDownMixin, testscenarios.TestWithScenarios):
         gd.save()
 
         self.assertEqual(settings, gd.get())
+
+    def test_custom_applications(self):
+        ca = self.shark.settings.custom_applications
+        settings = ca.get()
+
+        try:
+            ca.remove('flyscript')
+        except ValueError:
+            #it's all good, no rule on server
+            pass
+
+        ca.add('flyscript', 'http://test.com')
+        ca.save()
+
+        ca.remove('flyscript')
+        ca.save()
+
+        self.assertEqual(settings, ca.get())

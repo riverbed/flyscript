@@ -326,5 +326,5 @@ class Settings5(Settings4):
         self.port_definitions = PortDefinitions(shark.api.port_definitions, shark.api.srt_ports)
         self.group_definitions = GroupDefinitions(shark.api.port_groups)
         self.l4_mapping = L4Mapping(shark.api.l4_mappings)
-        self.custom_applicatons = CustomApplications(shark.api.custom_applications)
+        self.custom_applications = CustomApplications(shark.api.custom_applications)
         self.profiler_export = ProfilerExport(shark)
