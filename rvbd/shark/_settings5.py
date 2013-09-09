@@ -36,7 +36,7 @@ class DPIResource(object):
         return ports
 
     def _refresh_priorities(self):
-        for obj, i in enumerate(self._settings):
+        for i, obj in enumerate(self._settings):
                 obj['priority'] = i
 
     def get(self, force=False):
