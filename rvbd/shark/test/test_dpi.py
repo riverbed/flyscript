@@ -5,6 +5,7 @@
 #   https://github.com/riverbed/flyscript/blob/master/LICENSE ("License").  
 # This software is distributed "AS IS" as set forth in the License.
 
+import tempfile
 from common import *
 import testscenarios
 
@@ -41,7 +42,7 @@ class Dpi(SetUpTearDownMixin, testscenarios.TestWithScenarios):
         self.assertEqual(settings, pd.get())
 
     def test_group_definitions(self):
-        gd = self.shark.settings.port_definitions
+        gd = self.shark.settings.group_definitions
         settings = gd.get()
 
         try:
@@ -75,3 +76,15 @@ class Dpi(SetUpTearDownMixin, testscenarios.TestWithScenarios):
         ca.save()
 
         self.assertEqual(settings, ca.get())
+
+
+    def test_download_upload_port_definitions(self):
+        pd = self.shark.settings.port_definitions
+        settings = pd.get()
+        with tempfile.NamedTemporaryFile() as f:
+            pd.download(f.name)
+            f.flush()
+            f.seek(0)
+            pd.load(f.name)
+        self.assertEqual(settings, pd.get(force=True))
+        
