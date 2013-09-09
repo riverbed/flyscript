@@ -433,7 +433,7 @@ class SharkTests(SetUpTearDownMixin, unittest.TestCase):
         pe.enable()
         pe.disable()
         pe.remove_profiler('tm08-1.lab.nbttech.com')
-        pe.update()
+        pe.save()
 
     def test_profiler_export_remove(self):
         shark = self.shark
@@ -449,7 +449,7 @@ class SharkTests(SetUpTearDownMixin, unittest.TestCase):
         
         # Remove the only profiler export
         pe.remove_profiler('tm08-1.lab.nbttech.com')
-        pe.update()
+        pe.save()
         
         # Check there is no profiler
         assert shark.settings.profiler_export.get_profilers() == []
@@ -466,7 +466,7 @@ class SharkTests(SetUpTearDownMixin, unittest.TestCase):
         
         # Remove all Profilers
         pe.remove_all_profilers()
-        pe.update()
+        pe.save()
         
         # Check there is no profiler        
         assert shark.settings.profiler_export.get_profilers() == []

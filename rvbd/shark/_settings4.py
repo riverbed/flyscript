@@ -29,7 +29,7 @@ class Settings4(object):
                 self._settings = self.shark.api.settings.get_basic()
 
         @getted
-        def update(self):
+        def save(self):
             self.shark.api.settings.update_basic(self._settings)
 
         @property
@@ -127,7 +127,7 @@ class Settings4(object):
                 self._settings = self.shark.api.settings.get_auth()
 
         @getted
-        def update(self):
+        def save(self):
             self.shark.api.settings.update_auth(self._settings)
 
         @property
@@ -280,7 +280,7 @@ class Settings4(object):
                     self.categories[c.audit_type] = c
 
         @getted
-        def update(self, force=False):
+        def save(self, force=False):
             self.shark.api.settings.update_audit({'audit_categories' : self.categories.values()})
 
         @getted
@@ -386,7 +386,7 @@ class Settings4(object):
                                                         config_dict["rules"])
 
         @getted
-        def update(self, force=False):
+        def save(self, force=False):
             config_dict = {"firewall_enabled": self._firewall_config.enabled,
                            "default_policy" :self._firewall_config.default_policy,
                            "rules" :self._firewall_config.rules
@@ -498,7 +498,7 @@ class Settings4(object):
             self._settings = self.shark.api.settings.get_profiler_export()
 
         @getted    
-        def update(self):
+        def save(self):
             self.shark.api.settings.update_profiler_export(self._settings)
 
         @getted    
