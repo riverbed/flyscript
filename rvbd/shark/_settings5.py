@@ -7,46 +7,51 @@
 
 import json
 from _settings4 import Settings4, getted
+from rvbd.common.jsondict import JsonDict
 
 #there is no functional need to put this class nested into Settings5 class
 #leaving it as module object to simplify reuse and modularizzation
-class DPIResource(object):
+class SettingsLookup(object):
+    """This mixin makes object able to lookup on its inner _settings
+    structure. this enables easier lookup of settings using the dot notation.
+
+    Note that this object defines __getattr__ and not __getattribute__ it means that
+    if the object has any property/method it will be called first and this
+    lookup method will never be executed
+    """
+    def __getattr__(self, name):
+        if name in self._settings:
+            return getattr(self._settings, name)
+        else:
+            raise AttributeError
+
+    def __dir__(self):
+        """Retrieve posible attributes from object and _settings keys (since it's a
+        JsonDict object)
+        """
+        return sorted(set(dir(type(self))+dir(self._settings)))
+
+class BasicSettingsFunctionality(object):
+    """This basic mixin assumes the api.get() and api.update() available
+    for the given resource.
+
+    This is mainly used to give any setting object the get and save functionality and
+    reuse code
+    """
     def __init__(self, api):
         self._settings = None
         self.api = api
 
-    def _get_by_name(self, name):
-        for obj in self._settings:
-            if obj.get('name') == name:
-                return obj
-        return None
-
-    def _get_by_priority(self, priority):
-        obj = self._settings[priority]
-        if obj.get('priority') != priority:
-            return None
-        else:
-            return obj
-  
-    def _port_string_to_port_list(self, port_string, protocol='TCP'):
-        if port_string is not None:
-            ports = [{'port_range':range.strip(), 'protocol':protocol} for range in port_string.split(',')]
-        else:
-            ports = []
-        return ports
-
-    def _refresh_priorities(self):
-        for i, obj in enumerate(self._settings):
-                obj['priority'] = i
-
     def get(self, force=False):
+        """Get configuration from the server
+        """
         if self._settings is None and force is False:
-            self._settings = self.api.get()
+            self._settings = JsonDict(self.api.get())
         return self._settings
 
     @getted
     def save(self):
-        """Save configuratio to the server
+        """Save configuration to the server
         """
         self.api.update(self._settings)
         self.get(force=True)
@@ -79,7 +84,32 @@ class DPIResource(object):
 
         if save is True:
             self.save()
-        
+
+
+class DPIResource(BasicSettingsFunctionality):
+    def _get_by_name(self, name):
+        for obj in self._settings:
+            if obj.get('name') == name:
+                return obj
+        return None
+
+    def _get_by_priority(self, priority):
+        obj = self._settings[priority]
+        if obj.get('priority') != priority:
+            return None
+        else:
+            return obj
+  
+    def _port_string_to_port_list(self, port_string, protocol='TCP'):
+        if port_string is not None:
+            ports = [{'port_range':range.strip(), 'protocol':protocol} for range in port_string.split(',')]
+        else:
+            ports = []
+        return ports
+
+    def _refresh_priorities(self):
+        for i, obj in enumerate(self._settings):
+                obj['priority'] = i
 
 
 class PortDefinitions(DPIResource):
@@ -317,7 +347,15 @@ class ProfilerExport(Settings4.ProfilerExport):
     def disable_dpi(self, address):
         p = self._lookup_profiler(address)
         p['dpi_enabled'] = False
-        
+
+class Snmp(BasicSettingsFunctionality, SettingsLookup):
+    """Snmp settings configuration"""
+    pass
+
+class Alerts(BasicSettingsFunctionality, SettingsLookup):
+    """Alerts settings configuration"""
+    pass 
+
 class Settings5(Settings4):
     '''Interface to various configuration settings on the shark appliance. Version 5.0 API'''    
 
@@ -328,3 +366,5 @@ class Settings5(Settings4):
         self.l4_mapping = L4Mapping(shark.api.l4_mappings)
         self.custom_applications = CustomApplications(shark.api.custom_applications)
         self.profiler_export = ProfilerExport(shark)
+        self.snmp = Snmp(shark.api.snmp)
+        self.alerts = Alerts(shark.api.alerts)

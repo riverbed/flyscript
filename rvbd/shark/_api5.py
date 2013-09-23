@@ -85,6 +85,24 @@ class SrtPorts(API5Group):
         """Updates the configuration to the server"""
         return self.request('/srt_ports', 'PUT', data)
 
+class Snmp(API5Group):
+    def get(self):
+        """Get the configuration for the Snmp from the server"""
+        return self.request('/snmp', 'GET')
+
+    def update(self, data):
+        """Updates the configuration to the server"""
+        return self.request('/snmp', 'PUT')
+
+class Alerts(API5Group):
+    def get(self):
+        """Get the configuration for the alerts from the server"""
+        return self.request('/notification', 'GET')
+
+    def update(self, data):
+        """Updates the configuration to the server"""
+        return self.request('/notification', 'PUT')
+
 
 class API5_0(API4_0):
     version = '5.0'
@@ -97,5 +115,7 @@ class API5_0(API4_0):
         self.l4_mappings = L4Mappings('/api/shark/'+self.version+'/definitions', shark)
         self.custom_applications = CustomApplications('/api/shark/'+self.version+'/definitions', shark)
         self.srt_ports = SrtPorts('/api/shark/'+self.version+'/definitions', shark)
+        self.snmp = Snmp('/api/shark/'+self.version+'/settings', shark)
+        self.alerts = Alerts('/api/shark/'+self.version+'/settings', shark)
 
 __all__ = ['API5_0']
