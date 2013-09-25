@@ -92,7 +92,7 @@ class Snmp(API5Group):
 
     def update(self, data):
         """Updates the configuration to the server"""
-        return self.request('/snmp', 'PUT')
+        return self.request('/snmp', 'PUT', data)
 
 class Alerts(API5Group):
     def get(self):
@@ -101,7 +101,7 @@ class Alerts(API5Group):
 
     def update(self, data):
         """Updates the configuration to the server"""
-        return self.request('/notification', 'PUT')
+        return self.request('/notification', 'PUT', data)
 
 
 class API5_0(API4_0):

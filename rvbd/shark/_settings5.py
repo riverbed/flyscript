@@ -5,86 +5,10 @@
 #   https://github.com/riverbed/flyscript/blob/master/LICENSE ("License").  
 # This software is distributed "AS IS" as set forth in the License.
 
-import json
-from _settings4 import Settings4, getted
-from rvbd.common.jsondict import JsonDict
+from _settings4 import Settings4, getted, BasicSettingsFunctionality, ProfilerExport
 
 #there is no functional need to put this class nested into Settings5 class
 #leaving it as module object to simplify reuse and modularizzation
-class SettingsLookup(object):
-    """This mixin makes object able to lookup on its inner _settings
-    structure. this enables easier lookup of settings using the dot notation.
-
-    Note that this object defines __getattr__ and not __getattribute__ it means that
-    if the object has any property/method it will be called first and this
-    lookup method will never be executed
-    """
-    def __getattr__(self, name):
-        if name in self._settings:
-            return getattr(self._settings, name)
-        else:
-            raise AttributeError
-
-    def __dir__(self):
-        """Retrieve posible attributes from object and _settings keys (since it's a
-        JsonDict object)
-        """
-        return sorted(set(dir(type(self))+dir(self._settings)))
-
-class BasicSettingsFunctionality(object):
-    """This basic mixin assumes the api.get() and api.update() available
-    for the given resource.
-
-    This is mainly used to give any setting object the get and save functionality and
-    reuse code
-    """
-    def __init__(self, api):
-        self._settings = None
-        self.api = api
-
-    def get(self, force=False):
-        """Get configuration from the server
-        """
-        if self._settings is None and force is False:
-            self._settings = JsonDict(self.api.get())
-        return self._settings
-
-    @getted
-    def save(self):
-        """Save configuration to the server
-        """
-        self.api.update(self._settings)
-        self.get(force=True)
-
-    @getted
-    def cancel(self):
-        """Cancel pending changes to the configuration
-        and reloads the configuration from server
-        """
-        return self.get(force=True)
-
-    def download(self, path):
-        """Download configuration to path
-        path must be a complete, including a filename
-        """
-        data = self.get()
-        with open(path, 'w') as f:
-            f.write(json.dumps(data))
-
-    def load(self, path, save=True):
-        """Load the configuration from a path
-
-        `path` is the file path
-
-        `save` is a flag to automatically save to the server after load,
-        default to True
-        """
-        with open(path, 'r') as f:
-            self._settings = json.loads(f.read())
-
-        if save is True:
-            self.save()
-
 
 class DPIResource(BasicSettingsFunctionality):
     def _get_by_name(self, name):
@@ -115,18 +39,18 @@ class DPIResource(BasicSettingsFunctionality):
 class PortDefinitions(DPIResource):
     def __init__(self, api, srt_ports_api):
         super(PortDefinitions, self).__init__(api)
-        self.srt_ports_api = srt_ports_api
+        self._srt_ports_api = srt_ports_api
         self._srt_settings = None
 
     def get(self, force=False):
         if self._srt_settings is None or force:
-            self._srt_settings = self.srt_ports_api.get()
+            self._srt_settings = self._srt_ports_api.get()
         return super(PortDefinitions, self).get(force)
 
     @getted
     def save(self):
         super(PortDefinitions, self).save()
-        self.srt_ports_api.update(self._srt_settings)
+        self._srt_ports_api.update(self._srt_settings)
         
 
     def _lookup_port(self, port):
@@ -331,13 +255,14 @@ class CustomApplications(DPIResource):
             raise ValueError('The rule with name {0} does not exist'.format(name))
 
 
-class ProfilerExport(Settings4.ProfilerExport):
+class ProfilerExport(ProfilerExport):
     def _lookup_profiler(self, address):
         for p in self.data.profilers:
             if p.address == address:
                 return address
         raise ValueError('No profiler with addredss {0} has been found in the configuration'.format(address))
 
+    #TODO: test and dpi_enabled -> port
     @getted
     def enable_dpi(self, address):
         p = self._lookup_profiler(address)
@@ -348,13 +273,7 @@ class ProfilerExport(Settings4.ProfilerExport):
         p = self._lookup_profiler(address)
         p['dpi_enabled'] = False
 
-class Snmp(BasicSettingsFunctionality, SettingsLookup):
-    """Snmp settings configuration"""
-    pass
-
-class Alerts(BasicSettingsFunctionality, SettingsLookup):
-    """Alerts settings configuration"""
-    pass 
+    #sync
 
 class Settings5(Settings4):
     '''Interface to various configuration settings on the shark appliance. Version 5.0 API'''    
@@ -366,5 +285,11 @@ class Settings5(Settings4):
         self.l4_mapping = L4Mapping(shark.api.l4_mappings)
         self.custom_applications = CustomApplications(shark.api.custom_applications)
         self.profiler_export = ProfilerExport(shark)
-        self.snmp = Snmp(shark.api.snmp)
-        self.alerts = Alerts(shark.api.alerts)
+        self.snmp = BasicSettingsFunctionality(shark.api.snmp)
+        self.alerts = BasicSettingsFunctionality(shark.api.alerts)
+
+        #remove API 4.0 specific
+        del self.get_protocol_groups
+        del self.update_protocol_groups
+        del self.get_protocol_names
+        del self.update_protocol_names
