@@ -675,9 +675,9 @@ class System(API4Group):
 
 class Certificates(API4Group):
     
-    def get_certificates_config(self, as_json=True, timestamp_format=APITimestampFormat.NANOSECOND):
+    def get(self, as_json=True, timestamp_format=APITimestampFormat.NANOSECOND):
         """ Returns the certificates settings """
-        return self._xjtrans("/system/certificates", "GET", None, as_json, timestamp_format)
+        return self._xjtrans("/settings/certificates", "GET", None, as_json, timestamp_format)
     
     
     def update_profiler_export_certificate(self, certificate_data, as_json=True, timestamp_format=APITimestampFormat.NANOSECOND): 
@@ -703,16 +703,16 @@ class Certificates(API4Group):
         
     def copy_profiler_export_certificate(self, as_json=True, timestamp_format=APITimestampFormat.NANOSECOND): 
         """ Reuses the Profiler Export's certificate as web certificate"""
-        return self._xjtrans("/settings/certificates/web/profiler_export", "POST", None, as_json, timestamp_format)
+        return self._xjtrans("/settings/certificates/web/copy_profiler_export", "POST", None, as_json, timestamp_format)
        
     
     def add_trusted_profiler_certificate(self, certificate_data, as_json=True, timestamp_format=APITimestampFormat.NANOSECOND): 
         """ Add a new Trusted Profiler certificate"""
         return self._xjtrans("/settings/certificates/trusted_profilers", "POST", certificate_data, as_json, timestamp_format)
     
-    def delete_trusted_profiler_certificate(self, certificate_data, as_json=True, timestamp_format=APITimestampFormat.NANOSECOND):
-        """ Delete a new Trusted Profiler certificate"""
-        return self._xjtrans("/settings/certificates/trusted_profilers", "DELETE", certificate_data, as_json, timestamp_format)
+    def delete_trusted_profiler_certificate(self, id, as_json=True, timestamp_format=APITimestampFormat.NANOSECOND):
+        """ Delete a new Trusted Profiler certificate by its id"""
+        return self._xjtrans("/settings/certificates/trusted_profilers/"+id, "DELETE", None, as_json, timestamp_format)
 
 class Stats(API4Group):
     def get_memory(self, as_json=True, timestamp_format=APITimestampFormat.NANOSECOND):
@@ -770,6 +770,5 @@ class API4_0(object):
         # For the misc handlers just make them methods of the api class itself
         m = Misc('/api/shark/'+self.version, self.shark)
         self.ping = m.ping
-
 
 __all__ = ['API4_0']
