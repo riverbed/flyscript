@@ -256,24 +256,26 @@ class CustomApplications(DPIResource):
 
 
 class ProfilerExport(ProfilerExport):
+
     def _lookup_profiler(self, address):
-        for p in self.data.profilers:
-            if p.address == address:
-                return address
+        for p in self._settings.profilers:
+            if p['address'] == address:
+                return p
         raise ValueError('No profiler with addredss {0} has been found in the configuration'.format(address))
 
-    #TODO: test and dpi_enabled -> port
     @getted
-    def enable_dpi(self, address):
+    def sync_dpi_with_profiler(self, address):
         p = self._lookup_profiler(address)
-        p['dpi_enabled'] = True
-    
-    @getted
-    def disable_dpi(self, address):
-        p = self._lookup_profiler(address)
-        p['dpi_enabled'] = False
+        for prof in self._settings.profilers:
+            if 'sync' in prof:
+                del prof['sync']
+        p['sync'] = {"sync_port_names": True,"sync_port_groups": True,"sync_layer4_mappings":True,"sync_custom_applications":True}
 
-    #sync
+    @getted
+    def unsync_dpi_with_profiler(self, address):
+        p = self._lookup_profiler(address)
+        if 'sync' in p:
+            del p['sync']
 
 class Settings5(Settings4):
     '''Interface to various configuration settings on the shark appliance. Version 5.0 API'''    
@@ -284,7 +286,7 @@ class Settings5(Settings4):
         self.group_definitions = GroupDefinitions(shark.api.port_groups)
         self.l4_mapping = L4Mapping(shark.api.l4_mappings)
         self.custom_applications = CustomApplications(shark.api.custom_applications)
-        self.profiler_export = ProfilerExport(shark)
+        self.profiler_export = ProfilerExport(shark.api.settings)
         self.snmp = BasicSettingsFunctionality(shark.api.snmp)
         self.alerts = BasicSettingsFunctionality(shark.api.alerts)
 

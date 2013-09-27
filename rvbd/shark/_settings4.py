@@ -6,6 +6,7 @@
 # This software is distributed "AS IS" as set forth in the License.
 
 import functools
+import warnings
 
 from rvbd.common.jsondict import JsonDict
 import json
@@ -38,10 +39,10 @@ class BasicSettingsFunctionality(object):
         self._api = api
 
     def __getattr__(self, name):
-        if name in self._settings:
+        try:
             return getattr(self._settings, name)
-        else:
-            raise AttributeError
+        except AttributeError:
+            return object.__getattribute__(self, name)
 
     def __setattr__(self, name, value):
         """If name start with _ add as a normal attribute, add to _settings otherwise"""
@@ -89,22 +90,24 @@ class BasicSettingsFunctionality(object):
         with open(path, 'w') as f:
             f.write(json.dumps(data))
 
-    def load(self, path_or_dict, save=True):
+    def load(self, path_or_obj, save=True):
         """Load the configuration from a path or dict
 
-        `path_or_dict` is or a string representing a path or a dict representing the
+        `path_or_obj` is or a string representing a path or a dict/list representing the
         configuration
 
         `save` is a flag to automatically save to the server after load,
         default to True
         """
-        if isinstance(path_or_dict, basestring):
-            with open(path_or_dict, 'r') as f:
+        if isinstance(path_or_obj, basestring):
+            with open(path_or_obj, 'r') as f:
                 self._settings = json.loads(f.read())
-        elif isinstance(path_or_dict, dict):
-            self._settings = JsonDict(path_or_dict)
+        elif isinstance(path_or_obj, dict):
+            self._settings = JsonDict(path_or_obj)
+        elif isinstance(path_or_obj, list):
+            self._settings = list(path_or_obj)
         else:
-            raise ValueError('path_or_dict muth be a filepath or a dict')
+            raise ValueError('path_or_obj muth be a filepath, a dict or a list')
 
         if save is True:
             self.save()
@@ -176,6 +179,7 @@ class Licenses(BasicSettingsFunctionality):
         #this mymics other settings behaviour
         #even tho Licenses is not a bulk update
         self.get(force=True)
+        warnings.warn('Reboot of shark is needed to apply the new configuration')
     
     @getted
     def add(self, license_keys):
@@ -198,118 +202,108 @@ class Licenses(BasicSettingsFunctionality):
 
 
 class Firewall(BasicSettingsFunctionality):
-        """Allows to get the current configuration of the firewall and 
-        set a new one."""
-
-        def __init__(self, shark):
-            self._shark = shark
-            self._firewall_config = None
-            self._settings = None
-
-        @property
-        @getted
-        def firewall_settings(self):
-            return self._firewall_config
- 
-        def get(self):
-            config_dict = self.shark.api.settings.get_firewall_config()
-            self._settings = config_dict
-            self._firewall_config = self.FirewallConfig(config_dict["firewall_enabled"],
-                                                        config_dict["default_policy"],
-                                                        config_dict["rules"])
-
-        @getted
-        def save(self, force=False):
-            config_dict = {"firewall_enabled": self._firewall_config.enabled,
-                           "default_policy" :self._firewall_config.default_policy,
-                           "rules" :self._firewall_config.rules
-                           }
-            self.shark.api.settings.update_firewall_config(config_dict)
-
-        @firewall_settings.setter
-        @getted
-        def set_firewall_settings(self, firewall_config):
-            '''
-            Update the firewall configuration
-
-            firewall_config: the new configuration to set
-            '''
-            self._firewall_config = firewall_config
-        #TODO: test
-        class FirewallConfig:
-            '''
-            Wrapper class around the firewall configuration
-            '''
-            def __init__(self,
-                         enabled=False,
-                         default_policy="DROP",
-                         rules=None):
-                '''
-                Creates a new configuration
-
-                enabled: true if the firewall is enabled, false otherwise
-                default_policy: default policy for the firewall input chain
-                rules: set of firewall rules
-                '''
-                self.enabled = enabled
-                self.default_policy = default_policy
-                self.rules = rules or []
-
-
-            def add_rule(self,
-                         action,
-                         protocol=None,
-                         description=None,
-                         dest_port=None,
-                         source=None):
-                '''
-                Add a new rule with the fields specified in the call. The new rule is appended 
-                to the current firewall configuration
-
-                action: action  to  take  when  a  packet  matches  the  rule 
-                        Allowed values are ACCEPT, DROP, LOG_ACCEPT, LOG_DROP 
-                        This is a mandatory attribute and it does  not have a 
-                        default value
-
-                protocol: rule protocol. Allowed values are ALL, TCP, UDP, ALL,
-                          ICMP.
-
-                description: a brief description for the rule. 
-
-                dest_port: rule destination port 
-
-                source: rule IPV4 source address. It can contain a netmasks specified as CIDR
-                        format or as IPV4 address.",
-                '''
-                rule = {"action" :action,
-                        "protocol":protocol,
-                        "description":description,
-                        "dest_port": dest_port,
-                        "source": source
-                        }
-                #clean from None values
-                rule = dict((k, v) for k, v in rule.iteritems() if v is not None)
-                self.rules.append(rule)
-
-            def remove_rule(self,
-                            index):
-                '''
-                index: index of the rule to remove
-                '''
-                del self.rules[index]
-
-           
-class Certificates(BasicSettingsFunctionality):
-    '''Wrapper class around the certificates configuration'''
+    """Allows to get the current configuration of the firewall and 
+    set a new one."""
 
     def get(self, force=False):
         """Get configuration from the server
         """
         if self._settings is None and force is False:
-            self._settings = JsonDict(self._api.get_certificates_config())
+            self._settings = JsonDict(self._api.get_firewall_config())
         return JsonDict(self._settings)
+        
+    @getted
+    def save(self):
+        self._api.update_firewall_config(self._settings)
+        self.get(force=True)
 
+
+class Certificates(BasicSettingsFunctionality):
+    '''Wrapper class around the certificates configuration'''
+
+    def _gen_cert_configuration(self, *args, **kwargs):
+        return {
+                'issued_to':{
+                    'country': kwargs.get('country') or 'US',
+                    'email': kwargs.get('email') or '',
+                    'locality': kwargs.get('locality') or 'San Francisco',
+                    'organization': kwargs.get('organization') or 'Riverbed Technology',
+                    'organization_unit': kwargs.get('organization_unit') or '',
+                    'state': kwargs.get('state') or 'CA'
+                    },
+                'validity':{
+                    'days': kwargs.get('days') or 365
+                    }
+                }
+
+    @getted
+    def save(self):
+        #this mymics other settings behaviour
+        #even tho Licenses is not a bulk update
+        self.get(force=True)
+        warnings.warn('Reboot of shark is needed to apply the new configuration')
     
+    @getted
+    def use_profiler_export_certificate_for_web(self):
+        """Copies profiler export certificate and use it for webui"""
+        self._api.copy_profiler_export_certificate()
+      
+    @getted
+    def set_certificate_for_web(self, cert):
+        """Given a certificate in PEM format, uploads to the server and
+        sets as webui certificate.
+
+        The PEM certificate must contain both private key and CA-signed public certificate"""
+        self._api.update_web_certificate({'pem':cert})
+
+    @getted
+    def generate_new_certificate_for_web(self, country=None, email=None, locality=None,
+                                         organization=None, organization_unit=None,
+                                         state=None, days=None):
+        """Generates a new certificate for the webui"""
+        kwargs = locals()
+        kwargs.pop('self')
+        self._api.generate_web_certificate(self._gen_cert_configuration(**kwargs))
+
+    @getted
+    def set_certificate_for_profiler_export(self, cert):
+        """Give a certificate in PEM format, uploads to the server and sets
+        as profiler export certificate
+
+        The PEM certificate must contain both private key and CA-signed public certificate"""
+        self._api.update_profiler_export_certificate({'pem': cert})
+
+    @getted
+    def generate_new_certificate_for_profiler_export(self, country=None, email=None,
+                                                     locality=None,organization=None,
+                                                     organization_unit=None, state=None,
+                                                     days=None):
+        """Generates a new certificate for profiler export"""
+        kwargs = locals()
+        kwargs.pop('self')
+        self._api.generate_profiler_export_certificate(self._gen_cert_configuration(**kwargs))
+
+    @getted
+    def use_web_interface_certificate_for_profiler_export(self):
+        """Copies webui certificate and use it for profiler export"""
+        self._api.copy_web_certificate()
+
+    @getted
+    def add_profiler_trusted_certificate(self, name, cert):
+        """Adds the given PEM certificate to the list of trusted certificates
+        under the given name"""
+        self._api.add_trusted_profiler_certificate({
+                'id': name,
+                'pem': cert
+                })
+
+    @getted
+    def remove_profiler_trusted_certificate(self, name):
+        """Removes the name of a PEM certificate that is trusted, removes from the list of
+        trusted certificates"""
+        self._api.delete_trusted_profiler_certificate(name)
+    
+
 class ProfilerExport(BasicSettingsFunctionality):
     """Wrapper class around authentication settings. """
 
@@ -332,8 +326,8 @@ class CorsDomain(BasicSettingsFunctionality):
         """Get configuration from the server
         """
         if self._settings is None and force is False:
-            self._settings = JsonDict(self._api.get_cors_domains())
-        return JsonDict(self._settings)
+            self._settings = list(self._api.get_cors_domains())
+        return list(self._settings)
     
     @getted
     def save(self):
@@ -342,7 +336,7 @@ class CorsDomain(BasicSettingsFunctionality):
 
 
 class Settings4(object):
-    '''Interface to various configuration settings on the shark appliance.'''
+    """Interface to various configuration settings on the shark appliance."""
 
     def __init__(self, shark):
         super(Settings4, self).__init__()
@@ -354,6 +348,7 @@ class Settings4(object):
         self.firewall = Firewall(shark.api.settings)
         self.certificates = Certificates(shark.api.certificates)
         self.profiler_export = ProfilerExport(shark.api.settings)
+        self.cors_domain = CorsDomain(shark.api.settings)
 
         # For the raw text handlers there's nothing that the
         # high-level API needs to add or hide
