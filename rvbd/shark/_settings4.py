@@ -37,6 +37,7 @@ class BasicSettingsFunctionality(object):
     def __init__(self, api):
         self._settings = None
         self._api = api
+        self._settings_class = None
 
     def __getattr__(self, name):
         try:
@@ -64,9 +65,18 @@ class BasicSettingsFunctionality(object):
         """Get configuration from the server
         """
         if self._settings is None and force is False:
-            self._settings = JsonDict(self._api.get())
+            data = self._api.get()
+
+            #detect which class should we use to represent data
+            if isinstance(data, dict):
+                self._settings_class = JsonDict
+            elif isinstance(data, list):
+                self._settings_class = list
+
+            self._settings = self._settings_class(data)
+
         #with this we return a copy of _settings
-        return JsonDict(self._settings)
+        return self._settings_class(self._settings)
 
     @getted
     def save(self):
