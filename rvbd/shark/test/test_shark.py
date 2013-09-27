@@ -61,6 +61,23 @@ class SharkTests(SetUpTearDownMixin, unittest.TestCase):
             self.assertTrue(len(data) > 0)
             self.assertTrue(view.config['input_source']['path'].startswith('jobs'))
 
+        #testing bug 111168
+        #http://bugzilla.nbttech.com/show_bug.cgi?id=111168
+
+        with self.shark.create_view(job, columns, filters, name='bug_111168') as view:
+            data = view.get_data()
+
+            self.assertTrue(view.config['input_source']['path'].startswith('jobs'))
+
+        with self.shark.create_view(job, columns, [TimeFilter.parse_range('last 2 hours')], name='bug_111168_2') as view:
+            data = view.get_data()
+
+            self.assertTrue(view.config['input_source']['path'].startswith('jobs'))
+            self.assertEqual(len(view.config['input_source']['filters']), 1)
+            filter = view.config['input_source']['filters'][0]
+            self.assertEqual(filter.start+datetime.timedelta(hours=2), filter.end)
+
+
     def test_view_on_clip(self):
         """ Test creating a view on a trace clip """
         job = setup_capture_job(self.shark)
@@ -420,58 +437,7 @@ class SharkTests(SetUpTearDownMixin, unittest.TestCase):
         with shark.create_clip(job, [fltr], 'test_decorator_clip') as clip:
             #this will test the @loaded decorator
             clip.size
-
-    def test_profiler_export(self):
-        shark = self.shark
-        pe = shark.settings.profiler_export
-        pe.get()
-        try:
-            pe.remove_profiler('tm08-1.lab.nbttech.com')
-        except (RvbdHTTPException, ValueError):
-            pass
-        pe.add_profiler('tm08-1.lab.nbttech.com')
-        pe.enable()
-        pe.disable()
-        pe.remove_profiler('tm08-1.lab.nbttech.com')
-        pe.save()
-
-    def test_profiler_export_remove(self):
-        shark = self.shark
-        pe = shark.settings.profiler_export
-        pe.get()
-
-        # Remove all Profilers
-        pe.remove_all_profilers()
-        
-        # Add one Profiler
-        pe.add_profiler('tm08-1.lab.nbttech.com')
-        pe.enable()
-        
-        # Remove the only profiler export
-        pe.remove_profiler('tm08-1.lab.nbttech.com')
-        pe.save()
-        
-        # Check there is no profiler
-        assert shark.settings.profiler_export.get_profilers() == []
-        
-        
-    def test_profiler_export_remove_all(self):
-        shark = self.shark
-        pe = shark.settings.profiler_export
-        pe.get()
-        # Add two Profilers
-        pe.add_profiler('tm08-1.lab.nbttech.com')
-        pe.add_profiler('doesnotexist.lab.nbttech.com')
-        pe.enable()
-        
-        # Remove all Profilers
-        pe.remove_all_profilers()
-        pe.save()
-        
-        # Check there is no profiler        
-        assert shark.settings.profiler_export.get_profilers() == []
-        assert shark.settings.profiler_export.enabled() == False
-        
+              
     def test_job_export(self):
         shark = self.shark
         interface = shark.get_interfaces()[0]
