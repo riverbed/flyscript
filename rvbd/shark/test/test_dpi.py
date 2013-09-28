@@ -25,7 +25,7 @@ class Dpi(SetUpTearDownMixin, testscenarios.TestWithScenarios):
     def test_port_definitions(self):
         pd = self.shark.settings.port_definitions
         settings = pd.get()
-        self.assertNotEqual(pd._settings, None)
+        self.assertNotEqual(pd.data, None)
 
         try:
             pd.remove('flyscript', 65345)

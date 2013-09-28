@@ -520,7 +520,7 @@ class Files(API4Group):
         return self.shark.conn.download(self.uri_prefix + "/fs/%s/packets" % path, local_path, params=params)
         
 class Users(API4Group):
-    def get_all(self, as_json=True, timestamp_format=APITimestampFormat.NANOSECOND):
+    def get(self, as_json=True, timestamp_format=APITimestampFormat.NANOSECOND):
         """ Lists the users on the system """
         return self._xjtrans("/auth/users" , "GET", None, as_json, timestamp_format)
 
@@ -536,8 +536,12 @@ class Users(API4Group):
         """ Deletes the given user from the system """
         return self._xjtrans("/auth/users/%s" % username, "DELETE", None, True, APITimestampFormat.NANOSECOND)
 
+    def update(self, user, config):
+        """Updates user configuration"""
+        return self._xjtrans('/auth/users/{0}'.format(user), 'PUT', config, True, APITimestampFormat.NANOSECOND)
+
 class Groups(API4Group):
-    def get_all(self, as_json=True, timestamp_format=APITimestampFormat.NANOSECOND):
+    def get(self, as_json=True, timestamp_format=APITimestampFormat.NANOSECOND):
         """ Lists the groups on the system """
         return self._xjtrans("/auth/groups" , "GET", None, as_json, timestamp_format)
 
@@ -553,8 +557,9 @@ class Groups(API4Group):
         """ Deletes the given group from the system """
         return self._xjtrans("/auth/groups/%s" % groupname, "DELETE", None, True, APITimestampFormat.NANOSECOND)
 
+
 class Licenses(API4Group):
-    def get_all(self, as_json=True, timestamp_format=APITimestampFormat.NANOSECOND):
+    def get(self, as_json=True, timestamp_format=APITimestampFormat.NANOSECOND):
         """ Lists all licenses in the system """
         return self._xjtrans("/settings/licenses" , "GET", None, as_json, timestamp_format)
 
@@ -578,10 +583,6 @@ class Licenses(API4Group):
         """ Generate a license request. """
         return self._xjtrans("/settings/licenses/request", "POST", config, as_json, timestamp_format)
 
-class Auth:
-    def __init__(self, uri_prefix, conn):
-        self.users = Users(uri_prefix, conn)
-        self.groups = Groups(uri_prefix, conn)
 
 class Views(API4Group):
     def add(self, config, as_json=True, timestamp_format=APITimestampFormat.NANOSECOND):
@@ -752,7 +753,6 @@ class API4_0(object):
     def __init__(self, shark):
         self.shark = shark
         self.common = Common("/api/common/"+self.common_version, self.shark)
-        self.auth = Auth("/api/shark/"+self.version, self.shark)
         self.settings = Settings("/api/shark/"+self.version, self.shark)
         self.interfaces = Interfaces("/api/shark/"+self.version, self.shark)
         self.jobs = Jobs("/api/shark/"+self.version, self.shark)

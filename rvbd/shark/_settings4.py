@@ -10,11 +10,12 @@ import warnings
 
 from rvbd.common.jsondict import JsonDict
 import json
+import copy
 
 def getted(f):
     @functools.wraps(f)
     def wrapper(self, *args, **kwds):
-        if self._settings is None:
+        if self.data is None:
             raise LookupError('You have to get the configuration first via the get method')
         return f(self, *args, **kwds)
     return wrapper
@@ -28,62 +29,34 @@ class BasicSettingsFunctionality(object):
      cancel()
      download()
      load()
-
-    It defines a __getattr__ and __setattr__ such that attributes that start with _ are
-    added as object attribute and all the remaining is added to the inner _settings
-    JsonDict that stores the settings configuration and get synced with the server
-    as soon as the user save() the configuration.
     """
     def __init__(self, api):
-        self._settings = None
+        self.data = None
         self._api = api
-        self._settings_class = None
 
-    def __getattr__(self, name):
-        try:
-            return getattr(self._settings, name)
-        except AttributeError:
-            return object.__getattribute__(self, name)
-
-    def __setattr__(self, name, value):
-        """If name start with _ add as a normal attribute, add to _settings otherwise"""
-        if name[0] == '_':
-            super(BasicSettingsFunctionality, self).__setattr__(name, value)
-        elif self._settings is None:
-            raise RuntimeError('Get the settings from the server first with .get()')
-        else:
-            self._settings[name] = value
-  
-    def __dir__(self):
-        """Retrieve posible attributes from object and _settings keys (since it's a
-        JsonDict object)
+    def _get(self, f,  force=False):
+        """Gets the configuration calling the f function
         """
-        return sorted(set(dir(type(self))+dir(self._settings)))
-
+        if self.data is None or force is True:
+            self.data = f()
+        return copy.deepcopy(self.data)
 
     def get(self, force=False):
-        """Get configuration from the server
+        """Gets the configuration from the server
         """
-        if self._settings is None and force is False:
-            data = self._api.get()
+        return self._get(self._api.get, force)
 
-            #detect which class should we use to represent data
-            if isinstance(data, dict):
-                self._settings_class = JsonDict
-            elif isinstance(data, list):
-                self._settings_class = list
-
-            self._settings = self._settings_class(data)
-
-        #with this we return a copy of _settings
-        return self._settings_class(self._settings)
+    @getted
+    def _save(self, f):
+        """Saves the configuration using the function f"""
+        f(self.data)
+        self.get(force=True)
 
     @getted
     def save(self):
         """Save configuration to the server
         """
-        self._api.update(self._settings)
-        self.get(force=True)
+        self._save(self._api.update)
 
     @getted
     def cancel(self):
@@ -92,6 +65,7 @@ class BasicSettingsFunctionality(object):
         """
         return self.get(force=True)
 
+    @getted
     def download(self, path):
         """Download configuration to path
         path must be a complete, including a filename
@@ -111,11 +85,11 @@ class BasicSettingsFunctionality(object):
         """
         if isinstance(path_or_obj, basestring):
             with open(path_or_obj, 'r') as f:
-                self._settings = json.loads(f.read())
+                self.data = json.loads(f.read())
         elif isinstance(path_or_obj, dict):
-            self._settings = JsonDict(path_or_obj)
+            self.data = path_or_obj
         elif isinstance(path_or_obj, list):
-            self._settings = list(path_or_obj)
+            self.data = path_or_obj
         else:
             raise ValueError('path_or_obj muth be a filepath, a dict or a list')
 
@@ -129,15 +103,11 @@ class Basic(BasicSettingsFunctionality):
     def get(self, force=False):
         """Get configuration from the server
         """
-        if self._settings is None and force is False:
-            self._settings = JsonDict(self._api.get_basic())
-        return JsonDict(self._settings)
-
+        return self._get(self._api.get_basic)
 
     @getted
     def save(self):
-        self._api.update_basic(self._settings)
-        self.get(force=True)
+        self._save(self._api.update_basic)
 
 
 class Auth(BasicSettingsFunctionality):
@@ -146,14 +116,11 @@ class Auth(BasicSettingsFunctionality):
     def get(self, force=False):
         """Get configuration from the server
         """
-        if self._settings is None and force is False:
-            self._settings = JsonDict(self._api.get_auth())
-        return JsonDict(self._settings)
+        return self._get(self._api.get_auth)
 
     @getted
     def save(self):
-        self._api.update_auth(self._settings)
-        self.get(force=True)
+        self._save(self._api.update_auth)
         
 
 class Audit(BasicSettingsFunctionality):
@@ -162,27 +129,15 @@ class Audit(BasicSettingsFunctionality):
     def get(self, force=False):
         """Get configuration from the server
         """
-        if self._settings is None and force is False:
-            self._settings = JsonDict(self._api.get_audit())
-        return JsonDict(self._settings)
-
+        return self._get(self._api.get_audit)
 
     @getted
     def save(self):
-        self._api.update_audit(self._settings)
-        self.get(force=True)
-
+        self._save(self._api.update_audit)
 
                     
 class Licenses(BasicSettingsFunctionality):
     """Wrapper class around license configuration."""
-
-    def get(self, force=False):
-        """Get configuration from the server
-        """
-        if self._settings is None and force is False:
-            self._settings = self._api.get_all()
-        return list(self._settings)
 
     @getted
     def save(self):
@@ -203,8 +158,8 @@ class Licenses(BasicSettingsFunctionality):
         
     @getted
     def clear(self):
-        for lic in self._settings:
-            self._api.delete_license(lic.key)
+        for lic in self.data:
+            self._api.delete_license(lic['key'])
 
     @getted
     def status(self):
@@ -218,14 +173,11 @@ class Firewall(BasicSettingsFunctionality):
     def get(self, force=False):
         """Get configuration from the server
         """
-        if self._settings is None and force is False:
-            self._settings = JsonDict(self._api.get_firewall_config())
-        return JsonDict(self._settings)
-        
+        return self._get(self._api.get_firewall_config)
+
     @getted
     def save(self):
-        self._api.update_firewall_config(self._settings)
-        self.get(force=True)
+        self._save(self._api.update_firewall_config)
 
 
 class Certificates(BasicSettingsFunctionality):
@@ -320,14 +272,11 @@ class ProfilerExport(BasicSettingsFunctionality):
     def get(self, force=False):
         """Get configuration from the server
         """
-        if self._settings is None and force is False:
-            self._settings = JsonDict(self._api.get_profiler_export())
-        return JsonDict(self._settings)
+        return self._get(self._api.get_profiler_export)
 
     @getted
     def save(self):
-        self._api.update_profiler_export(self._settings)
-        self.get(force=True)
+        self._save(self._api.update_profiler_export)
 
 
 class CorsDomain(BasicSettingsFunctionality):
@@ -335,14 +284,95 @@ class CorsDomain(BasicSettingsFunctionality):
     def get(self, force=False):
         """Get configuration from the server
         """
-        if self._settings is None and force is False:
-            self._settings = list(self._api.get_cors_domains())
-        return list(self._settings)
-    
+        return self._get(self._api.get_cors_domains)
+
     @getted
     def save(self):
-        self._api.update_cors_domains(self._settings)
+        self._save(self._api.update_cors_domains)
+
+
+class Users(BasicSettingsFunctionality):
+
+    @getted
+    def save(self):
+        #this mymics other settings behaviour
+        #even tho User is not a bulk update
         self.get(force=True)
+
+    @getted
+    def add(self, username, password, groups=[], can_be_locked=False):
+        """Adds a user to the Shark
+
+        `username` is a string representing the username
+
+        `groups` is the group the user should be added in.
+        Administrators is the administrators group. Add user to that group
+        to make the user with administator privileges.
+
+        `can_be_locked` is a boolean representing if the user can be locked out
+        from the system or not
+        """
+        self._api.add({'name': username,
+                       'password': password,
+                       'groups': groups,
+                       'can_be_locked': can_be_locked
+                       })
+    @getted
+    def delete(self, username):
+        """Delete user from the system
+
+        `username` is the username of the user to be deleted
+        """
+        self._api.delete(username)
+
+    @getted
+    def change_password(self, username, password):
+        """Change password of an user
+        """
+        self._api.update(username, {'existing_password': '',
+                                    'new_password': password})
+
+class Groups(BasicSettingsFunctionality):
+
+    @getted
+    def save(self):
+        #this mymics other settings behaviour
+        #even tho User is not a bulk update
+        self.get(force=True)
+
+    @getted
+    def add(self, name, description='', capabilities=[]):
+        """Adds a new group to the system
+
+        `name` is the name of the group
+
+        `description` is the description of the group
+
+        `capabilities` is a list of permissions the group has.
+        They can be:
+
+        CAPABILITY_ADMINISTRATOR,
+        CAPABILITY_APPLY_VIEWS_ON_FILES,
+        CAPABILITY_APPLY_VIEWS_ON_INTERFACES,
+        CAPABILITY_SHARE_VIEWS,
+        CAPABILITY_CREATE_FILES,
+        CAPABILITY_IMPORT_FILES,
+        CAPABILITY_EXPORT_FILES,
+        CAPABILITY_CREATE_JOBS,
+        CAPABILITY_SCHEDULE_WATCHES,
+        CAPABILITY_ACCESS_PROBE_FILES
+        """
+        self._api.groups.add({'name': name,
+                              'description': description,
+                              'capabilities': capabilities})
+
+    @getted
+    def delete(self, name):
+        """Removes group from the groups in the Shark
+
+        `name` is the name of the group
+        """
+        self._api.delete(name)
 
 
 class Settings4(object):
@@ -359,6 +389,8 @@ class Settings4(object):
         self.certificates = Certificates(shark.api.certificates)
         self.profiler_export = ProfilerExport(shark.api.settings)
         self.cors_domain = CorsDomain(shark.api.settings)
+        self.users = Users(shark.api.users)
+        self.groups = Groups(shark.api.groups)
 
         # For the raw text handlers there's nothing that the
         # high-level API needs to add or hide

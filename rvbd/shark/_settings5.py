@@ -12,13 +12,13 @@ from _settings4 import Settings4, getted, BasicSettingsFunctionality, ProfilerEx
 
 class DPIResource(BasicSettingsFunctionality):
     def _get_by_name(self, name):
-        for obj in self._settings:
+        for obj in self.data:
             if obj.get('name') == name:
                 return obj
         return None
 
     def _get_by_priority(self, priority):
-        obj = self._settings[priority]
+        obj = self.data[priority]
         if obj.get('priority') != priority:
             return None
         else:
@@ -32,7 +32,7 @@ class DPIResource(BasicSettingsFunctionality):
         return ports
 
     def _refresh_priorities(self):
-        for i, obj in enumerate(self._settings):
+        for i, obj in enumerate(self.data):
                 obj['priority'] = i
 
 
@@ -40,21 +40,21 @@ class PortDefinitions(DPIResource):
     def __init__(self, api, srt_ports_api):
         super(PortDefinitions, self).__init__(api)
         self._srt_ports_api = srt_ports_api
-        self._srt_settings = None
+        self._srtdata = None
 
     def get(self, force=False):
-        if self._srt_settings is None or force:
-            self._srt_settings = self._srt_ports_api.get()
+        if self._srtdata is None or force:
+            self._srtdata = self._srt_ports_api.get()
         return super(PortDefinitions, self).get(force)
 
     @getted
     def save(self):
         super(PortDefinitions, self).save()
-        self._srt_ports_api.update(self._srt_settings)
+        self._srt_ports_api.update(self._srtdata)
         
 
     def _lookup_port(self, port):
-        for port_obj in self._settings:
+        for port_obj in self.data:
             if port_obj['port'] == port:
                 return port_obj
         return None
@@ -85,11 +85,11 @@ class PortDefinitions(DPIResource):
             else:
                 port_obj[protocol] = name
         else:
-            self._settings.append({protocol:name, 'port':port})
+            self.data.append({protocol:name, 'port':port})
 
         if srt and protocol == 'tcp':
-            if port not in self._srt_settings:
-                self._srt_settings.append(port)
+            if port not in self._srtdata:
+                self._srtdata.append(port)
 
 
     @getted
@@ -109,34 +109,34 @@ class PortDefinitions(DPIResource):
 
         if port_obj.get('tcp') == name:
             del port_obj['tcp']
-            if port in self._srt_settings:
-                self._srt_settings.remove(port)
+            if port in self._srtdata:
+                self._srtdata.remove(port)
 
         if port_obj.get('udp') == name:
             del port_obj['udp']
 
         if port_obj.get('tcp') is None and port_obj.get('udp') is None:
-            self._settings.remove(port_obj)
+            self.data.remove(port_obj)
 
 
 class GroupDefinitions(DPIResource):
     @getted
     def add(self, name, tcp_ports=None, udp_ports=None, priority=None):
         #sort the list first by priority
-        self._settings.sort(key=lambda k:k['priority'])
+        self.data.sort(key=lambda k:k['priority'])
         
         obj = self._get_by_name(name)
         
         if obj is not None:
             raise ValueError('A port group with the same name already exists')
 
-        priority = priority or len(self._settings)
+        priority = priority or len(self.data)
 
         tcp = self._port_string_to_port_list(tcp_ports, 'TCP')
 
         udp = self._port_string_to_port_list(udp_ports, 'UDP')
     
-        self._settings.insert(priority, {'name': name,
+        self.data.insert(priority, {'name': name,
                                          'priority': priority,
                                          'ports': tcp+udp
                                          })
@@ -169,7 +169,7 @@ class GroupDefinitions(DPIResource):
                 raise ValueError('Port group with priority {0} has a different name than {1}'.format(priority, name))
 
         if obj is not None:
-            self._settings.remove(obj)
+            self.data.remove(obj)
         else:
             if name is not None and priority is None:
                 raise ValueError('Impossible to find port group with name {0}'.format(name))
@@ -193,7 +193,7 @@ class L4Mapping(GroupDefinitions):
         """
         assert tcp_ports is not None and udp_ports is not None
 
-        priority = priority or len(self._settings)
+        priority = priority or len(self.data)
 
         obj = self._get_by_name(name)
 
@@ -203,7 +203,7 @@ class L4Mapping(GroupDefinitions):
         tcp = self._port_string_to_port_list(tcp_ports, 'TCP')
         udp = self._port_string_to_port_list(udp_ports, 'UDP')
 
-        self._settings.insert(priority, {'name': name,
+        self.data.insert(priority, {'name': name,
                                          'hosts': [x.strip() for x in hosts.split(',')],
                                          'priority': priority,
                                          'ports': tcp+udp
@@ -240,7 +240,7 @@ class CustomApplications(DPIResource):
         if obj is not None:
             raise ValueError('a l4 mapping with name {0} already exists'.format(name))
 
-        self._settings.append({'name': name, 'uri': uri})
+        self.data.append({'name': name, 'uri': uri})
 
     @getted
     def remove(self, name):
@@ -250,7 +250,7 @@ class CustomApplications(DPIResource):
         """
         obj = self._get_by_name(name)
         if obj is not None:
-            self._settings.remove(obj)
+            self.data.remove(obj)
         else:
             raise ValueError('The rule with name {0} does not exist'.format(name))
 
@@ -258,7 +258,7 @@ class CustomApplications(DPIResource):
 class ProfilerExport(ProfilerExport):
 
     def _lookup_profiler(self, address):
-        for p in self._settings.profilers:
+        for p in self.data.profilers:
             if p['address'] == address:
                 return p
         raise ValueError('No profiler with addredss {0} has been found in the configuration'.format(address))
@@ -266,7 +266,7 @@ class ProfilerExport(ProfilerExport):
     @getted
     def sync_dpi_with_profiler(self, address):
         p = self._lookup_profiler(address)
-        for prof in self._settings.profilers:
+        for prof in self.data.profilers:
             if 'sync' in prof:
                 del prof['sync']
         p['sync'] = {"sync_port_names": True,"sync_port_groups": True,"sync_layer4_mappings":True,"sync_custom_applications":True}

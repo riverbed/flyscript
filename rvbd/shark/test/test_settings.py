@@ -21,12 +21,12 @@ class Dpi(SetUpTearDownMixin, testscenarios.TestWithScenarios):
     def test_snmp(self):
         snmp = self.shark.settings.snmp
         saved = snmp.get()
-        snmp.description = "flyscript test"
-        snmp.enabled = True
-        snmp.community = "public"
-        snmp.contact = 'flyscript@test.com'
-        snmp.version = 'V2C'
-        snmp.location = 'first floor'
+        snmp.data.description = "flyscript test"
+        snmp.data.enabled = True
+        snmp.data.community = "public"
+        snmp.data.contact = 'flyscript@test.com'
+        snmp.data.version = 'V2C'
+        snmp.data.location = 'first floor flyscript'
         self._equality_test(saved, snmp)
       
     def test_alerts(self):
@@ -38,15 +38,15 @@ class Dpi(SetUpTearDownMixin, testscenarios.TestWithScenarios):
         #restore the configuration the REST api complains
         alerts = self.shark.settings.alerts
         saved = alerts.get()
-        alerts.mail.smtp_server_port = 25
-        alerts.mail.to_address = 'test@test.com'
-        alerts.mail.from_address = 'fromtest@test.com'
-        alerts.mail.smtp_server_address = 'smtp.test.com'
+        alerts.data['mail']['smtp_server_port'] = 25
+        alerts.data['mail']['to_address'] = 'test@test.com'
+        alerts.data['mail']['from_address'] = 'fromtest@test.com'
+        alerts.data['mail']['smtp_server_address'] = 'smtp.test.com'
         #enable SMTP notifications
-        alerts.notifier.enabled = True
+        alerts.data['notifier']['enabled'] = True
         #enable SNMP notifications
-        alerts.notifier.trap_notification_enabled = True
-        alerts.trap.receivers.append({'community': 'public',
+        alerts.data['notifier']['trap_notification_enabled'] = True
+        alerts.data['trap']['receivers'].append({'community': 'public',
                             'version': 'V2C',
                             'address': 'trap.test.com'})
         self._equality_test(saved, alerts)
@@ -54,48 +54,73 @@ class Dpi(SetUpTearDownMixin, testscenarios.TestWithScenarios):
     def test_basic(self):
         basic = self.shark.settings.basic
         basic.get()
-        basic.hostname = 'shark'
-        basic.domain = 'local'
-        basic.primary_dns = '127.0.0.1'
-        basic.secondary_dns = '8.8.8.8'
-        basic.ssh_enabled = True
-        basic.fips_enabled = True
+        basic.data['hostname'] = 'shark'
+        basic.data['domain'] = 'local'
+        basic.data['primary_dns'] = '127.0.0.1'
+        basic.data['secondary_dns'] = '8.8.8.8'
+        basic.data['ssh_enabled'] = True
+        basic.data['fips_enabled'] = True
         basic.save()
         saved = basic.get()
-        basic.hostname = 'flyscripttest'
-        basic.domain = 'flyscripttestdomain'
-        basic.primary_dns = '10.0.0.1'
-        basic.secondary_dns = '10.0.0.2'
-        basic.ssh_enabled = True
-        basic.fips_enabled = False
-        basic.timezone
-        basic.ntp_config
+        basic.data['hostname'] = 'flyscripttest'
+        basic.data['domain'] = 'flyscripttestdomain'
+        basic.data['primary_dns'] = '10.0.0.1'
+        basic.data['secondary_dns'] = '10.0.0.2'
+        basic.data['ssh_enabled'] = True
+        basic.data['fips_enabled'] = False
+        basic.data['timezone']
+        basic.data['ntp_config']
         self._equality_test(saved, basic)
         
     def test_auth(self):
         auth = self.shark.settings.auth
         auth.get()
-        auth.local_settings.min_password_length = 0
-        auth.local_settings.password_change_history = 0
+        auth.data['local_settings']['min_password_length'] = 0
+        auth.data['local_settings']['password_change_history'] = 0
         auth.auth_sequence = ['LOCAL']
         auth.save()
         saved = auth.get()
-        auth.local_settings.min_password_length = 1
+        auth.data['local_settings']['min_password_length'] = 1
         self._equality_test(saved, auth)
+
+    def test_users(self):
+        users = self.shark.settings.users
+        saved = users.get()
+        try:
+            users.delete('flyscripttestuser')
+        except:
+            #all good we came from a failure of this test from
+            #the past
+            pass
+
+        users.add('flyscripttestuser', 'test', ['Administrators'])
+        users.save()
+
+        #check that user is in the system
+        flag = False
+        for user in users.data:
+            if user['name'] == 'flyscripttestuser':
+                flag = True
+                break
+        self.assertEqual(flag, True)
+
+        users.change_password('flyscripttestuser', 'test1234')
+        users.delete('flyscripttestuser')
+        users.save()
       
     def test_audit(self):
         audit = self.shark.settings.audit
         audit.get()
-        for category in audit.audit_categories:
-            print category.min_remote_server_level
-            print category.audit_type
-            print category.min_syslog_level
-            print category.description
-            print category.name
-        audit.audit_categories[0].name = 'test'
+        for category in audit.data['audit_categories']:
+            print category['min_remote_server_level']
+            print category['audit_type']
+            print category['min_syslog_level']
+            print category['description']
+            print category['name']
+        audit.data['audit_categories'][0]['name'] = 'test'
         audit.save()
         saved = audit.get()
-        audit.audit_categories[0].name = 'AUTHENTICATION'
+        audit.data['audit_categories'][0]['name'] = 'AUTHENTICATION'
         self._equality_test(saved, audit)
 
     def test_licenses(self):
@@ -116,14 +141,14 @@ class Dpi(SetUpTearDownMixin, testscenarios.TestWithScenarios):
     def test_firewall(self):
         firewall = self.shark.settings.firewall
         saved = firewall.get()
-        firewall.firewall_enabled = False
-        for rule in firewall.rules:
+        firewall.data['firewall_enabled'] = False
+        for rule in firewall.data['rules']:
             print rule
         #action can be ACCEPT, DROP, LOG_ACCEPT, LOG_DROP
         #protocol can be ALL, TCP, UDP, ICMP
-        firewall.rules.append({'action': 'ACCEPT', 'protocol': 'TCP', 'description': 'flyscript test', 'dest_port': 12345})
-        firewall.rules.append({'action': 'DROP', 'protocol': 'UDP', 'description': 'flyscript test', 'dest_port': 12345})
-        firewall.rules.append({'action': 'LOG_DROP', 'protocol': 'TCP', 'description': 'flyscript test', 'dest_port': 12367})
+        firewall.data['rules'].append({'action': 'ACCEPT', 'protocol': 'TCP', 'description': 'flyscript test', 'dest_port': 12345})
+        firewall.data['rules'].append({'action': 'DROP', 'protocol': 'UDP', 'description': 'flyscript test', 'dest_port': 12345})
+        firewall.data['rules'].append({'action': 'LOG_DROP', 'protocol': 'TCP', 'description': 'flyscript test', 'dest_port': 12367})
         self._equality_test(saved, firewall)
         
     def test_certificates(self):
@@ -213,11 +238,11 @@ UvxFJ1fRfr/EH0By7SF/K4COFhhve6M=
         profiler_export = self.shark.settings.profiler_export
         saved = profiler_export.get()
         #remove profiler if exists
-        for p in profiler_export.profilers:
+        for p in profiler_export.data['profilers']:
             if p.get('address') == 'test.com':
-                profiler_export.profilers.remove(p)
+                profiler_export.data['profilers'].remove(p)
         #add profiler
-        profiler_export.profilers.append({'address':'test.com'})
+        profiler_export.data['profilers'].append({'address':'test.com'})
         # dpi sync
         profiler_export.sync_dpi_with_profiler('test.com')
         profiler_export.save()
@@ -225,7 +250,7 @@ UvxFJ1fRfr/EH0By7SF/K4COFhhve6M=
         profiler_export.unsync_dpi_with_profiler('test.com')
         profiler_export.save()
         #voip_enabled and dpi_enabled for all ports
-        for port in profiler_export.adapter_ports:
+        for port in profiler_export.data['adapter_ports']:
             port['voip_enabled'] = True
             port['dpi_enabled'] = True
         profiler_export.save()
@@ -235,8 +260,8 @@ UvxFJ1fRfr/EH0By7SF/K4COFhhve6M=
     def test_cors_domain(self):
         cors = self.shark.settings.cors_domain
         saved = cors.get()
-        cors.append('http://example_domain1.com')
-        cors.append('http://example_domain2.com')
+        cors.data.append('http://example_domain1.com')
+        cors.data.append('http://example_domain2.com')
         cors.save()
         self._equality_test(saved, cors)
 
