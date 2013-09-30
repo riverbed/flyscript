@@ -107,6 +107,31 @@ class Dpi(SetUpTearDownMixin, testscenarios.TestWithScenarios):
         users.change_password('flyscripttestuser', 'test1234')
         users.delete('flyscripttestuser')
         users.save()
+
+    def test_groups(self):
+        groups = self.shark.settings.groups
+        saved = groups.get()
+
+        try:
+            groups.delete('flyscriptgroup')
+        except:
+            #all good we came from a failure of this test from
+            #the past
+            pass
+
+        groups.add('flyscriptgroup', 'test', ['CAPABILITY_ADMINISTRATOR'])
+        groups.save()
+
+        #check that user is in the system
+        flag = False
+        for group in groups.data:
+            if group['name'] == 'flyscriptgroup':
+                flag = True
+                break
+        self.assertEqual(flag, True)
+
+        groups.delete('flyscriptgroup')
+        groups.save()
       
     def test_audit(self):
         audit = self.shark.settings.audit
