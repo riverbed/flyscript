@@ -765,7 +765,7 @@ class API4_0(object):
         self.stats = Stats("/api/shark/"+self.version, self.shark)
         self.info = Info('/api/shark/'+self.version+'/info', self.shark)
         self.users = Users('/api/shark/'+self.version, self.shark)
-        self.groups = Users('/api/shark/'+self.version, self.shark)
+        self.groups = Groups('/api/shark/'+self.version, self.shark)
 
         # For the misc handlers just make them methods of the api class itself
         m = Misc('/api/shark/'+self.version, self.shark)

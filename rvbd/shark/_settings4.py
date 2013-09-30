@@ -362,9 +362,9 @@ class Groups(BasicSettingsFunctionality):
         CAPABILITY_SCHEDULE_WATCHES,
         CAPABILITY_ACCESS_PROBE_FILES
         """
-        self._api.groups.add({'name': name,
-                              'description': description,
-                              'capabilities': capabilities})
+        self._api.add({'name': name,
+                       'description': description,
+                       'capabilities': capabilities})
 
     @getted
     def delete(self, name):
