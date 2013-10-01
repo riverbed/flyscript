@@ -122,19 +122,20 @@ def setup_capture_job(shark):
                                start_immediately=True) 
             time.sleep(5)
             job.stop()
+        return job
 
     try:
         job = shark.get_capture_job_by_name('Flyscript-tests-job')
     except ValueError:
         #let's create a capture job
-        create_job()
+        job = create_job()
 
     if job.size_on_disk == 0:
         #job has no packets, probably
         #the packet storage has been formatted
         #and lost all the packages
         job.delete()
-        create_job()
+        job = create_job()
 
     logger.info('using capture job %r' % job)
     return job

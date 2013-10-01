@@ -789,7 +789,7 @@ class Storage(API4Group):
     def reinitialize(self):
         """Reinitializes the packet storage
         """
-        return self._xjtrans('/system/reinitialize', 'POST', None, True, APITimestampFormat.NANOSECOND)
+        return self._xjtrans('/system/storage/reinitialize', 'POST', None, True, APITimestampFormat.NANOSECOND)
 
     def format(self, data):
         """Formats packet storage
