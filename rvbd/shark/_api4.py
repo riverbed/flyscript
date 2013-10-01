@@ -746,7 +746,57 @@ class Misc(API4Group):
         """
         resp = self.shark.conn.request(self.uri_prefix + "/ping", method, body=data, extra_headers=headers)
         return resp.read()
-    
+
+
+class Update(API4Group):
+    def get(self):
+        return self._xjtrans('/system/update', 'GET', None, True, APITimestampFormat.NANOSECOND)
+
+    def load_iso_from_url(self, data):
+        """Download upload iso from an url"""
+        return self._xjtrans('/system/update/url', 'POST', data, True, APITimestampFormat.NANOSECOND)
+
+    def upload_iso(self, f):
+        """Given a file descriptor `f`, uploads the content to the server as an upload iso
+        """
+        headers = {'Content-Disposition' : 'update.iso',
+                   'Content-Type' : 'application/octet-stream'}
+        
+        return self.shark.conn.upload(self.uri_prefix + "/system/update/iso", data=f, extra_headers=headers)
+
+    def delete_iso(self, data):
+        """Delete a previously uploaded iso"""
+        return self._xjtrans('/system/update/state', 'PUT', data, True, APITimestampFormat.NANOSECOND)
+
+    def update(self, data):
+        """Perform update of the shark
+
+        `init_id` is the id of the image on the server that is ready for update
+        """
+        return self._xjtrans('/system/update/state', 'PUT',
+                             data,
+                             True, APITimestampFormat.NANOSECOND)
+
+class Storage(API4Group):
+    """Encapsulates the storage informations that can be found in
+    Maintenance page in the webui
+    """
+    def get(self):
+        """Gets the storage configuration from the Server
+        """
+        return self._xjtrans('/system/storage', 'GET', None, True, APITimestampFormat.NANOSECOND)
+
+    def reinitialize(self):
+        """Reinitializes the packet storage
+        """
+        return self._xjtrans('/system/reinitialize', 'POST', None, True, APITimestampFormat.NANOSECOND)
+
+    def format(self, data):
+        """Formats packet storage
+        """
+        return self._xjtrans('/system/format_storage', 'POST', data, True, APITimestampFormat.NANOSECOND )
+
+
 class API4_0(object):
     version = '4.0'
     common_version = '1.0'
@@ -766,6 +816,8 @@ class API4_0(object):
         self.info = Info('/api/shark/'+self.version+'/info', self.shark)
         self.users = Users('/api/shark/'+self.version, self.shark)
         self.groups = Groups('/api/shark/'+self.version, self.shark)
+        self.update = Update('/api/shark/'+self.version, self.shark)
+        self.storage = Storage('/api/shark/'+self.version, self.shark)
 
         # For the misc handlers just make them methods of the api class itself
         m = Misc('/api/shark/'+self.version, self.shark)
