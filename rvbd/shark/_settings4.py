@@ -11,6 +11,7 @@ import warnings
 from rvbd.common.jsondict import JsonDict
 import json
 import copy
+import time
 
 def getted(f):
     @functools.wraps(f)
@@ -96,6 +97,20 @@ class BasicSettingsFunctionality(object):
         if save is True:
             self.save()
 
+class NoBulk(object):
+    """Mixin class to force get of new configuration in not bulk update capable
+    settings
+
+    This basically overrides the save method such that it doesn't perform a
+    bulk update on the resource but fetches the new data from the server only
+    """
+
+    @getted
+    def save(self):
+        #this mymics settings behaviour
+        #for all the resources that do not allow bulk update
+        self.get(force=True)
+
 class Basic(BasicSettingsFunctionality):
     """Wrapper class around basic system settings."""
 
@@ -136,14 +151,12 @@ class Audit(BasicSettingsFunctionality):
         self._save(self._api.update_audit)
 
                     
-class Licenses(BasicSettingsFunctionality):
+class Licenses(NoBulk, BasicSettingsFunctionality):
     """Wrapper class around license configuration."""
 
     @getted
     def save(self):
-        #this mymics other settings behaviour
-        #even tho Licenses is not a bulk update
-        self.get(force=True)
+        NoBulk.save(self)
         warnings.warn('Reboot of shark is needed to apply the new configuration')
     
     @getted
@@ -180,7 +193,7 @@ class Firewall(BasicSettingsFunctionality):
         self._save(self._api.update_firewall_config)
 
 
-class Certificates(BasicSettingsFunctionality):
+class Certificates(NoBulk, BasicSettingsFunctionality):
     '''Wrapper class around the certificates configuration'''
 
     def _gen_cert_configuration(self, *args, **kwargs):
@@ -200,9 +213,7 @@ class Certificates(BasicSettingsFunctionality):
 
     @getted
     def save(self):
-        #this mymics other settings behaviour
-        #even tho Licenses is not a bulk update
-        self.get(force=True)
+        NoBulk.save(self)
         warnings.warn('Reboot of shark is needed to apply the new configuration')
     
     @getted
@@ -291,13 +302,7 @@ class CorsDomain(BasicSettingsFunctionality):
         self._save(self._api.update_cors_domains)
 
 
-class Users(BasicSettingsFunctionality):
-
-    @getted
-    def save(self):
-        #this mymics other settings behaviour
-        #even tho User is not a bulk update
-        self.get(force=True)
+class Users(NoBulk, BasicSettingsFunctionality):
 
     @getted
     def add(self, username, password, groups=[], can_be_locked=False):
@@ -332,13 +337,7 @@ class Users(BasicSettingsFunctionality):
         self._api.update(username, {'existing_password': '',
                                     'new_password': password})
 
-class Groups(BasicSettingsFunctionality):
-
-    @getted
-    def save(self):
-        #this mymics other settings behaviour
-        #even tho User is not a bulk update
-        self.get(force=True)
+class Groups(NoBulk, BasicSettingsFunctionality):
 
     @getted
     def add(self, name, description='', capabilities=[]):
@@ -374,7 +373,72 @@ class Groups(BasicSettingsFunctionality):
         """
         self._api.delete(name)
 
+class Update(NoBulk, BasicSettingsFunctionality):
 
+    def load_iso_from_url(self, url):
+        self._api.load_iso_from_url({'url':url})
+
+    def upload_iso(self, f):
+        self._api.upload_iso(f)
+
+    @getted
+    def delete_iso(self):
+        self._api.delete_iso({'state': 'NEUTRAL', 'reset': True})
+
+    @getted
+    def update(self):
+        if self.data['init_id'] is not '': 
+            res = self._api.update({'init_id':self.data.init_id, 'state':'RUNNING'})
+        else:
+            raise SystemError('Server does not have any iso image loaded for upload. Upload an iso first and save the configuration to proceed.')
+
+        while res['state'] == 'RUNNING':
+            time.sleep(5)
+            res = self.get(force=True)
+
+        if res['state'] != 'NEUTRAL':
+            raise SystemError('Server returned error while update: {0}'.format(res['comment']))
+
+        return res
+
+class Storage(NoBulk, BasicSettingsFunctionality):
+
+    def reinitialize(self, wait=True):
+        """Reinitializes the packet storage
+
+        If `wait` is True it will wait for the packet storage to be back again
+        before returning
+
+        WARNING: This operation will lose all packets in every job
+        """
+        self._api.reinitialize()
+
+        res = self.get(force=True)
+
+        while res['state'] == 'INITIALIZING':
+            time.sleep(5)
+            res = self.get(force=True)
+
+        if res['state'] != 'OK':
+            raise SystemError('Server returned error while reinitializing packet storage')
+
+        return res
+
+    def format(self, percentage_reserved_space=0):
+        """Formats the packet storage
+
+        `percentage_reserved_space` is the percentage of disk reserved starting from the
+        outher boundaries of the disk.
+        Since I/O operations at the farmost parts of the disk have higher latency this is
+        often used to increase performances of the packet recorder.
+        `percentage_reserved_space` can be any value from 0 (default) to 95.
+
+        WARNING: This operation will lose all packets in every job
+        """
+
+        assert percentage_reserved_space >=0 and percentage_reserved_space < 96
+        self._api.format({'reserved_space': percentage_reserved_space})
+      
 class Settings4(object):
     """Interface to various configuration settings on the shark appliance."""
 
@@ -391,6 +455,8 @@ class Settings4(object):
         self.cors_domain = CorsDomain(shark.api.settings)
         self.users = Users(shark.api.users)
         self.groups = Groups(shark.api.groups)
+        self.update = Update(shark.api.update)
+        self.storage = Storage(shark.api.storage)
 
         # For the raw text handlers there's nothing that the
         # high-level API needs to add or hide

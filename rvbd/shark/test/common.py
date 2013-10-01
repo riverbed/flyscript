@@ -112,10 +112,7 @@ def setup_defaults():
 
 
 def setup_capture_job(shark):
-    try:
-        job = shark.get_capture_job_by_name('Flyscript-tests-job')
-    except ValueError:
-        #let's create a capture job
+    def create_job():
         interface = shark.get_interfaces()[0]
         if shark.model == 'vShark':
             job = shark.create_job(interface, 'Flyscript-tests-job', '10%', indexing_size_limit='2GB',
@@ -125,6 +122,19 @@ def setup_capture_job(shark):
                                start_immediately=True) 
             time.sleep(5)
             job.stop()
+
+    try:
+        job = shark.get_capture_job_by_name('Flyscript-tests-job')
+    except ValueError:
+        #let's create a capture job
+        create_job()
+
+    if job.size_on_disk == 0:
+        #job has no packets, probably
+        #the packet storage has been formatted
+        #and lost all the packages
+        job.delete()
+        create_job()
 
     logger.info('using capture job %r' % job)
     return job

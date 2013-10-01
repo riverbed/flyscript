@@ -8,7 +8,7 @@
 from common import *
 import testscenarios
 
-class Dpi(SetUpTearDownMixin, testscenarios.TestWithScenarios):
+class Settings(SetUpTearDownMixin, testscenarios.TestWithScenarios):
     scenarios = config.get('hosts')
 
     def _equality_test(self, saved, settings):
@@ -289,4 +289,34 @@ UvxFJ1fRfr/EH0By7SF/K4COFhhve6M=
         cors.data.append('http://example_domain2.com')
         cors.save()
         self._equality_test(saved, cors)
+
+    def test_upload(self):
+        update = self.shark.settings.update
+        saved = update.get()
+
+        try:
+            update.delete_iso()
+        except:
+            pass
+
+        
+        #update.upload_iso(open('./Downloads/update.iso'))
+
+        update.load_iso_from_url('http://releng.nbttech.com/cascade_west/catamaran/shark/latest/update.iso')
+
+        update.save()
+
+        update.delete_iso()
+
+        #To perform update
+        #update.update()
+
+    def test_storage(self):
+        storage = self.shark.settings.storage
+        saved = storage.get()
+
+        storage.reinitialize()
+
+        #format will lose all packets
+        storage.format()
 
