@@ -26,9 +26,9 @@ class Job5(s4.Job4):
         except RvbdHTTPException:
             #it's all good, the job was already STOPPED
             pass
-        self.api.update(self.id, data)
+        self._api.update(self.id, data)
         if state != "STOPPED":
-            self.api.state_update(self.id, {'state':state})
+            self._api.state_update(self.id, {'state':state})
         
 
 class Interface5(s4.Interface4):    
