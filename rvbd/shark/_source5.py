@@ -19,7 +19,8 @@ class Job5(s4.Job4):
 
     def save(self):
         data = self.data['config'].copy()
-        state = self.data['status']['state']
+        state = self.get_status()['state']
+
         try:
             self.stop()
         except RvbdHTTPException:
@@ -34,7 +35,7 @@ class Interface5(s4.Interface4):
 
     def save(self):
         if self.shark.model == "vShark":
-            self.api.update(self.id, {
+            self._api.update(self.id, {
                     'name': self.data.name,
                     'description': self.data.description
                     })
@@ -48,7 +49,7 @@ class Interface5(s4.Interface4):
             del data['is_promiscuous_mode']
             del data['type']
             del data['id']
-            self.api.update(self.id, data)
+            self._api.update(self.id, data)
         self.update()
 
     @s4.Interface4.name.setter
