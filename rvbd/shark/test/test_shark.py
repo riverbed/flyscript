@@ -58,7 +58,6 @@ class SharkTests(SetUpTearDownMixin, unittest.TestCase):
         with self.shark.create_view(job, columns, None, name='test_view_on_job') as view:
             data = view.get_data()
 
-            self.assertTrue(len(data) > 0)
             self.assertTrue(view.config['input_source']['path'].startswith('jobs'))
 
         #testing bug 111168

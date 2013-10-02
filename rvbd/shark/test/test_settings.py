@@ -299,10 +299,10 @@ UvxFJ1fRfr/EH0By7SF/K4COFhhve6M=
         except:
             pass
 
-        
+        #Do not perfom these two because
+        #they are really time and bandwidth hungry
         #update.upload_iso(open('./Downloads/update.iso'))
-
-        update.load_iso_from_url('http://releng.nbttech.com/cascade_west/catamaran/shark/latest/update.iso')
+        # update.load_iso_from_url('http://releng.nbttech.com/cascade_west/catamaran/shark/latest/update.iso')
 
         update.save()
 
