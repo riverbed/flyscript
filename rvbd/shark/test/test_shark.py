@@ -493,20 +493,7 @@ class SharkTests(SetUpTearDownMixin, unittest.TestCase):
 
 
 
-class SharkLiveViewTests(unittest.TestCase):
-
-    # this is duplicate, get rid of it
-    def setUp(self):
-        try:
-            host = self.host
-        except:
-            host = config['sharkhost']
-            if scenario_only:
-                unittest.skip('Running only tests with scenario')
-        self.shark = create_shark(host)
-    
-    def tearDown(self):
-        cleanup_shark(self.shark)
+class SharkLiveViewTests(SetUpTearDownMixin, unittest.TestCase):
 
     def test_live_view(self):
         shark = self.shark

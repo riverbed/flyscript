@@ -290,7 +290,7 @@ UvxFJ1fRfr/EH0By7SF/K4COFhhve6M=
         cors.save()
         self._equality_test(saved, cors)
 
-    def test_upload(self):
+    def test_update(self):
         update = self.shark.settings.update
         saved = update.get()
 
