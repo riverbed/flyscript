@@ -23,7 +23,7 @@ from rvbd.shark._exceptions import SharkException
 from rvbd.shark._api_helpers import SharkAPIVersions
 from rvbd.shark._api4 import API4_0
 from rvbd.common.utils import ColumnProxy
-from rvbd.shark._class_mapping import Classesv4, Classes
+from rvbd.shark._class_mapping import Classesv4, Classes, Classesv5
 
 
 FILTERS_MAP = {}
@@ -33,7 +33,8 @@ API_TABLE = {
     }
 
 CLASS_TABLE = {
-    '4.0': Classesv4
+    '4.0': Classesv4,
+    '5.0': Classesv5
     }
 
 
@@ -78,7 +79,7 @@ class Shark(Service):
 
         super(Shark, self).__init__("shark", host, port=port, auth=auth,
                                     force_ssl=force_ssl, versions=versions)
-
+        
         self.api = API_TABLE[str(self.api_version)](self)
         self.classes = CLASS_TABLE[str(self.api_version)]()
         #these module may not be available
