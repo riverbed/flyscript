@@ -41,7 +41,7 @@ def main(app):
     ) 
 
     # Create the clip
-    clip = job.add_clip(filters, "a test clip")
+    clip = job.add_clip(filters, "a_test_clip")
 
     print 'Clip with the following properties created:'
     print ''

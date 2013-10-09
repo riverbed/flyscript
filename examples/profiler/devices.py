@@ -15,6 +15,9 @@ from rvbd.common.utils import Formatter
 import optparse
 from itertools import izip
 
+import logging
+logger = logging.getLogger(__name__)
+
 class DeviceReport(ProfilerApp):
 
     def add_options(self, parser):
@@ -28,12 +31,15 @@ class DeviceReport(ProfilerApp):
         group.add_option('--typelist', action='store_true', dest='typelist', default=False,
                          help='return type information')
         parser.add_option_group(group)
+        logger.info('added option group')
 
     def validate_args(self):
         """ Check that ipaddr is mutually exclusive from typeid, cidr and typelist
         """
+        logger.info('validating base options')
         super(DeviceReport, self).validate_args()
 
+        logger.info('validating custom options')
         if sum([self.options.ipaddr is not None,
                 (self.options.typeid is not None or self.options.cidr is not None),
                 self.options.typelist]) > 1:
@@ -44,6 +50,7 @@ class DeviceReport(ProfilerApp):
     def main(self):
         """ Setup query and run report with default column set
         """
+        logger.info('running main')
 
         if self.options.ipaddr:
             self.data = self.profiler.api.devices.get_details(self.options.ipaddr)
