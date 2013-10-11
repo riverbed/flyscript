@@ -10,6 +10,8 @@ from _settings4 import Settings4, getted, BasicSettingsFunctionality, ProfilerEx
 #there is no functional need to put this class nested into Settings5 class
 #leaving it as module object to simplify reuse and modularizzation
 
+from functools import partial
+
 class DPIResource(BasicSettingsFunctionality):
     def _get_by_name(self, name):
         for obj in self.data:
@@ -294,7 +296,7 @@ class Settings5(Settings4):
             raise NotImplementedError('This functionality has been replaced in this version of Shark with the DPI classes. Please refer to the documentation for more informations or look at the instance of ' + append)
 
         #remove API 4.0 specific
-        self.get_protocol_groups = raise_NotImplementedError('Shark.settings.groups_definitions')
-        self.update_protocol_groups = raise_NotImplementedError('Shark.settings.groups_definitions')
-        self.get_protocol_names = raise_NotImplementedError('Shark.settings.l4_mapping')
-        self.update_protocol_names = raise_NotImplementedError('Shark.settings.l4_mapping')
+        self.get_protocol_groups = partial(raise_NotImplementedError, 'Shark.settings.groups_definitions')
+        self.update_protocol_groups = partial(raise_NotImplementedError, 'Shark.settings.groups_definitions')
+        self.get_protocol_names = partial(raise_NotImplementedError, 'Shark.settings.l4_mapping')
+        self.update_protocol_names = partial(raise_NotImplementedError, 'Shark.settings.l4_mapping')
