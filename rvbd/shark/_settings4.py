@@ -438,7 +438,14 @@ class Storage(NoBulk, BasicSettingsFunctionality):
 
         assert percentage_reserved_space >=0 and percentage_reserved_space < 96
         self._api.format({'reserved_space': percentage_reserved_space})
-      
+
+class NotImplementedSetting(object):
+    def __init__(self, msg=''):
+        self.msg = msg
+
+    def get(self, force=True):
+        raise NotImplementedError('This setting is not available for this version of Shark'+self.msg)
+
 class Settings4(object):
     """Interface to various configuration settings on the shark appliance."""
 
@@ -469,3 +476,7 @@ class Settings4(object):
         self.update_protocol_groups = shark.api.settings.update_protocol_groups
         self.get_protocol_names = shark.api.settings.get_protocol_names
         self.update_protocol_names = shark.api.settings.update_protocol_names
+
+        #these have been implemented from API >= 5.0 
+        self.alerts = NotImplementedSetting()
+        self.snmp = NotImplementedSetting()
