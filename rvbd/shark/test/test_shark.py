@@ -588,7 +588,7 @@ try:
         scenario_only = True
     
         class SharkWithScenarios(testscenarios.TestWithScenarios, SharkTests):
-            scenarios = config.get('hosts')
+            scenarios = config.get('4.0') + config.get('5.0')
 except:
     pass
 

@@ -10,7 +10,7 @@ from common import *
 import testscenarios
 
 class Dpi(SetUpTearDownMixin, testscenarios.TestWithScenarios):
-    scenarios = config.get('hosts')
+    scenarios = config.get('5.0')
 
     def test_job_dpi(self):
         job = setup_capture_job(self.shark)

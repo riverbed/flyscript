@@ -9,7 +9,7 @@ from common import *
 import testscenarios
 
 class Settings(SetUpTearDownMixin, testscenarios.TestWithScenarios):
-    scenarios = config.get('hosts')
+    scenarios = config.get('4.0') + config.get('5.0')
 
     def _equality_test(self, saved, settings):
         settings.save()
@@ -324,8 +324,11 @@ UvxFJ1fRfr/EH0By7SF/K4COFhhve6M=
         if self.shark.get_protocol_version() == '5.0':
             with self.assertRaises(NotImplementedError):
                 self.shark.settings.get_protocol_groups()
+            with self.assertRaises(NotImplementedError):
                 self.shark.settings.update_protocol_groups()
+            with self.assertRaises(NotImplementedError):
                 self.shark.settings.get_protocol_names()
+            with self.assertRaises(NotImplementedError):
                 self.shark.settings.update_protocol_names()
 
 
