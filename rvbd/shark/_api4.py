@@ -162,7 +162,7 @@ class Settings(API4Group):
         return self._xjtrans("/settings/notification/send_test_mail", "POST", config, as_json, timestamp_format)
 
     def send_test_trap(self, config, as_json=True, timestamp_format=APITimestampFormat.NANOSECOND):
-        return self._xjtrans('/settings/notificaton/send_test_trap', "POST", config, as_json, timestamp_format)
+        return self._xjtrans('/settings/notification/send_test_trap', "POST", config, as_json, timestamp_format)
 
 
     def get_profiler_export(self, as_json=True, timestamp_format=APITimestampFormat.NANOSECOND):
