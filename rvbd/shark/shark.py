@@ -532,11 +532,13 @@ class Shark(Service):
 
     def restart(self):
         """Restart the Shark Appliance.
+        This will issue a system reboot.
         """
         self.api.system.restart({'type':'SHARK'})
 
     def restart_probe(self):
         """Restart the Shark probe.
+        This will restart the Pilot server only.
         """
         self.api.system.restart({'type':'PROBE'})
 
