@@ -320,3 +320,12 @@ UvxFJ1fRfr/EH0By7SF/K4COFhhve6M=
         #format will lose all packets
         storage.format()
 
+    def test_4_and_5_compatibility(self):
+        if self.shark.get_protocol_version() == '5.0':
+            with self.assertRaises(NotImplementedError):
+                self.shark.settings.get_protocol_groups()
+                self.shark.settings.update_protocol_groups()
+                self.shark.settings.get_protocol_names()
+                self.shark.settings.update_protocol_names()
+
+
