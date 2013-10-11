@@ -7,10 +7,9 @@
 
 from common import *
 import testscenarios
+from functools import partial
 
-class Settings(SetUpTearDownMixin, testscenarios.TestWithScenarios):
-    scenarios = config.get('4.0') + config.get('5.0')
-
+class EqualityTest(object):
     def _equality_test(self, saved, settings):
         settings.save()
         self.assertNotEqual(saved, settings.get())
@@ -18,39 +17,10 @@ class Settings(SetUpTearDownMixin, testscenarios.TestWithScenarios):
         settings.save()
         self.assertEqual(saved, settings.get())
 
-    def test_snmp(self):
-        snmp = self.shark.settings.snmp
-        saved = snmp.get()
-        snmp.data.description = "flyscript test"
-        snmp.data.enabled = True
-        snmp.data.community = "public"
-        snmp.data.contact = 'flyscript@test.com'
-        snmp.data.version = 'V2C'
-        snmp.data.location = 'first floor flyscript'
-        self._equality_test(saved, snmp)
-      
-    def test_alerts(self):
-        #this test will fail first time in a new shark. why?
-        #because the rest api does not allow to set an empty
-        #SMTP server even if SMTP alerts are not enabled
-        #and the basic configuration of a newly created shark
-        #has an empyt SMTP configuration. So when i try to
-        #restore the configuration the REST api complains
-        alerts = self.shark.settings.alerts
-        saved = alerts.get()
-        alerts.data['mail']['smtp_server_port'] = 25
-        alerts.data['mail']['to_address'] = 'test@test.com'
-        alerts.data['mail']['from_address'] = 'fromtest@test.com'
-        alerts.data['mail']['smtp_server_address'] = 'smtp.test.com'
-        #enable SMTP notifications
-        alerts.data['notifier']['enabled'] = True
-        #enable SNMP notifications
-        alerts.data['notifier']['trap_notification_enabled'] = True
-        alerts.data['trap']['receivers'].append({'community': 'public',
-                            'version': 'V2C',
-                            'address': 'trap.test.com'})
-        self._equality_test(saved, alerts)
-      
+
+class Settings(EqualityTest, SetUpTearDownMixin, testscenarios.TestWithScenarios):
+    scenarios = config.get('4.0') + config.get('5.0')
+            
     def test_basic(self):
         basic = self.shark.settings.basic
         basic.get()
@@ -258,6 +228,83 @@ UvxFJ1fRfr/EH0By7SF/K4COFhhve6M=
         certificates.add_profiler_trusted_certificate('default_profiler',
                                                       default_profiler_pem)
         certificates.save()
+    
+    def test_cors_domain(self):
+        cors = self.shark.settings.cors_domain
+        saved = cors.get()
+        cors.data.append('http://example_domain1.com')
+        cors.data.append('http://example_domain2.com')
+        cors.save()
+        self._equality_test(saved, cors)
+
+    def test_update(self):
+        update = self.shark.settings.update
+        saved = update.get()
+
+        try:
+            update.delete_iso()
+        except:
+            pass
+
+        #Do not perfom these two because
+        #they are really time and bandwidth hungry
+        #update.upload_iso(open('./Downloads/update.iso'))
+        # update.load_iso_from_url('http://releng.nbttech.com/cascade_west/catamaran/shark/latest/update.iso')
+
+        # update.save()
+
+        # update.delete_iso()
+
+        #To perform update
+        #update.update()
+
+    #disabling this because it requires all jobs to be turned off
+    #and will loose all the packets in jobs
+
+    # def test_storage(self):
+    #     storage = self.shark.settings.storage
+    #     saved = storage.get()
+
+    #     storage.reinitialize()
+
+    #     #format will lose all packets
+    #     storage.format()
+
+
+class Settings5Specific(EqualityTest, SetUpTearDownMixin, testscenarios.TestWithScenarios):
+    scenarios = config.get('5.0')
+
+    def test_4_and_5_compatibility(self):
+        with self.assertRaises(NotImplementedError):
+            self.shark.settings.get_protocol_groups()
+        with self.assertRaises(NotImplementedError):
+            self.shark.settings.update_protocol_groups()
+        with self.assertRaises(NotImplementedError):
+            self.shark.settings.get_protocol_names()
+        with self.assertRaises(NotImplementedError):
+            self.shark.settings.update_protocol_names()
+
+    def test_alerts(self):
+        #this test will fail first time in a new shark. why?
+        #because the rest api does not allow to set an empty
+        #SMTP server even if SMTP alerts are not enabled
+        #and the basic configuration of a newly created shark
+        #has an empyt SMTP configuration. So when i try to
+        #restore the configuration the REST api complains
+        alerts = self.shark.settings.alerts
+        saved = alerts.get()
+        alerts.data['mail']['smtp_server_port'] = 25
+        alerts.data['mail']['to_address'] = 'test@test.com'
+        alerts.data['mail']['from_address'] = 'fromtest@test.com'
+        alerts.data['mail']['smtp_server_address'] = 'smtp.test.com'
+        #enable SMTP notifications
+        alerts.data['notifier']['enabled'] = True
+        #enable SNMP notifications
+        alerts.data['notifier']['trap_notification_enabled'] = True
+        alerts.data['trap']['receivers'].append({'community': 'public',
+                            'version': 'V2C',
+                            'address': 'trap.test.com'})
+        self._equality_test(saved, alerts)
 
     def test_profiler_export(self):
         profiler_export = self.shark.settings.profiler_export
@@ -281,54 +328,48 @@ UvxFJ1fRfr/EH0By7SF/K4COFhhve6M=
         profiler_export.save()
         #test checks
         self._equality_test(saved, profiler_export)
-        
-    def test_cors_domain(self):
-        cors = self.shark.settings.cors_domain
-        saved = cors.get()
-        cors.data.append('http://example_domain1.com')
-        cors.data.append('http://example_domain2.com')
-        cors.save()
-        self._equality_test(saved, cors)
 
-    def test_update(self):
-        update = self.shark.settings.update
-        saved = update.get()
+    def test_snmp(self):
+        snmp = self.shark.settings.snmp
+        saved = snmp.get()
+        snmp.data.description = "flyscript test"
+        snmp.data.enabled = True
+        snmp.data.community = "public"
+        snmp.data.contact = 'flyscript@test.com'
+        snmp.data.version = 'V2C'
+        snmp.data.location = 'first floor flyscript'
+        self._equality_test(saved, snmp)
 
-        try:
-            update.delete_iso()
-        except:
-            pass
+    
+class Settings4Specific(EqualityTest, SetUpTearDownMixin, testscenarios.TestWithScenarios):
+    scenarios = config.get('4.0')
 
-        #Do not perfom these two because
-        #they are really time and bandwidth hungry
-        #update.upload_iso(open('./Downloads/update.iso'))
-        # update.load_iso_from_url('http://releng.nbttech.com/cascade_west/catamaran/shark/latest/update.iso')
+    def test_alerts(self):
+        """They are not supported for 4.0"""
+        with self.assertRaises(NotImplementedError):
+            alerts = self.shark.settings.alerts
+            alerts.get()
 
-        update.save()
+    def test_snmp(self):
+        """They are not supported for 4.0"""
+        with self.assertRaises(NotImplementedError):
+            x = self.shark.settings.snmp
+            x.get()
 
-        update.delete_iso()
-
-        #To perform update
-        #update.update()
-
-    def test_storage(self):
-        storage = self.shark.settings.storage
-        saved = storage.get()
-
-        storage.reinitialize()
-
-        #format will lose all packets
-        storage.format()
-
-    def test_4_and_5_compatibility(self):
-        if self.shark.get_protocol_version() == '5.0':
-            with self.assertRaises(NotImplementedError):
-                self.shark.settings.get_protocol_groups()
-            with self.assertRaises(NotImplementedError):
-                self.shark.settings.update_protocol_groups()
-            with self.assertRaises(NotImplementedError):
-                self.shark.settings.get_protocol_names()
-            with self.assertRaises(NotImplementedError):
-                self.shark.settings.update_protocol_names()
-
-
+    def test_profiler_export(self):
+        profiler_export = self.shark.settings.profiler_export
+        saved = profiler_export.get()
+        #remove profiler if exists
+        for p in profiler_export.data['profilers']:
+            if p.get('address') == 'test.com':
+                profiler_export.data['profilers'].remove(p)
+        #add profiler
+        profiler_export.data['profilers'].append({'address':'test.com'})
+        profiler_export.save()
+        #voip_enabled and dpi_enabled for all ports
+        for port in profiler_export.data['adapter_ports']:
+            port['voip_enabled'] = True
+        profiler_export.save()
+        #test checks
+        self._equality_test(saved, profiler_export)
+   
