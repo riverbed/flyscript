@@ -290,8 +290,11 @@ class Settings5(Settings4):
         self.snmp = BasicSettingsFunctionality(shark.api.snmp)
         self.alerts = BasicSettingsFunctionality(shark.api.alerts)
 
+        def raise_NotImplementedError(append):
+            raise NotImplementedError('This functionality has been replaced in this version of Shark with the DPI classes. Please refer to the documentation for more informations or look at the instance of ' + append)
+
         #remove API 4.0 specific
-        del self.get_protocol_groups
-        del self.update_protocol_groups
-        del self.get_protocol_names
-        del self.update_protocol_names
+        self.get_protocol_groups = raise_NotImplementedError('Shark.settings.groups_definitions')
+        self.update_protocol_groups = raise_NotImplementedError('Shark.settings.groups_definitions')
+        self.get_protocol_names = raise_NotImplementedError('Shark.settings.l4_mapping')
+        self.update_protocol_names = raise_NotImplementedError('Shark.settings.l4_mapping')
