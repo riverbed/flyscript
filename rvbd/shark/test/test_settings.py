@@ -306,6 +306,11 @@ class Settings5Specific(EqualityTest, SetUpTearDownMixin, testscenarios.TestWith
                             'address': 'trap.test.com'})
         self._equality_test(saved, alerts)
 
+        #test snmp
+        alerts.test_snmp({"address":"trap.riverbed.com","community":"public","version":"V2C"})
+        #test smtp
+        alerts.test_smtp('notexistentsmtp.riverbed.com', 'nonexistent@riverbed.com', 'flyscript_test@riverbed.com')
+
     def test_profiler_export(self):
         profiler_export = self.shark.settings.profiler_export
         saved = profiler_export.get()

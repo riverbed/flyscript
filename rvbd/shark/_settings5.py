@@ -279,6 +279,34 @@ class ProfilerExport(ProfilerExport):
         if 'sync' in p:
             del p['sync']
 
+class Alerts(BasicSettingsFunctionality):
+    def test_snmp(self, obj):
+        """Sends a test SNMP trap
+
+        `obj` must be in the form of:
+
+        {"address":"trap.riverbed.com","version":"V1","community":"test"}
+
+        or
+
+        {"address":"trap.riverbed.com","community":"public","version":"V2C"}
+
+        or
+
+        {"address":"trap.riverbed.com","version":"V3","username":"test","engine_id":"testengine","security_level":"AUTH_PRIVACY","authentication":{"protocol":"MD5","passphrase":"testpassword"},"privacy":{"protocol":"DES","passphrase":"testpassword"}}
+        """
+        return self._api.send_test_snmp(obj)
+        
+
+    def test_smtp(self, address, to_address, from_address, port=25):
+        obj = {
+            'smtp_server_address': address,
+            'smtp_server_port': port,
+            'to_address': to_address,
+            'from_address': from_address
+            }
+        return self._api.send_test_smtp(obj)
+
 class Settings5(Settings4):
     '''Interface to various configuration settings on the shark appliance. Version 5.0 API'''    
 
@@ -290,7 +318,7 @@ class Settings5(Settings4):
         self.custom_applications = CustomApplications(shark.api.custom_applications)
         self.profiler_export = ProfilerExport(shark.api.settings)
         self.snmp = BasicSettingsFunctionality(shark.api.snmp)
-        self.alerts = BasicSettingsFunctionality(shark.api.alerts)
+        self.alerts = Alerts(shark.api.alerts)
 
         def raise_NotImplementedError(append):
             raise NotImplementedError('This functionality has been replaced in this version of Shark with the DPI classes. Please refer to the documentation for more informations or look at the instance of ' + append)

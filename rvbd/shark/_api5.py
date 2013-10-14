@@ -96,12 +96,20 @@ class Snmp(API5Group):
 
 class Alerts(API5Group):
     def get(self):
-        """Get the configuration for the alerts from the server"""
+        """Gets the configuration for the alerts from the server"""
         return self.request('/notification', 'GET')
 
     def update(self, data):
         """Updates the configuration to the server"""
         return self.request('/notification', 'PUT', data)
+
+    def send_test_snmp(self, data):
+        """Tries the SNMP configuration"""
+        return self.request('/notification/send_test_trap.json', 'POST', data)
+
+    def send_test_smtp(self, data):
+        """Tries the SMTP configuration"""
+        return self.request('/notification/send_test_mail.json', 'POST', data)
 
 
 class API5_0(API4_0):
