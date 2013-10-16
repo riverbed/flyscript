@@ -20,10 +20,11 @@ def loaded(f):
 
 
 class _InputSource(object):
-    def __init__(self, shark, data):
+    def __init__(self, shark, data, api):
         self.shark = shark
         self.id = data['id']
         self.data = DictObject.create_from_dict(data)
+        self._api = api
 
     @classmethod
     def get(cls, shark, id, name=None):
@@ -32,6 +33,13 @@ class _InputSource(object):
               name and (source.data.config.name == name):
                 return source
         return None
+
+    def update(self, data):
+        """Update the data of the current object
+        with new data from the server
+        """
+        assert self.id == data['id']
+        self.data = DictObject.create_from_dict(data)
 
 
 class Clip(_InputSource):

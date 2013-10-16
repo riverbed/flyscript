@@ -355,7 +355,7 @@ class File4(_FSResource, _InputSource):
 
     def __init__(self, shark, data):
         super(File4, self).__init__(shark, data)
-        _InputSource.__init__(self, shark, data)
+        _InputSource.__init__(self, shark, data, shark.api.fs)
 
     @property
     def source_path(self):

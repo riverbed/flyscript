@@ -22,20 +22,20 @@ class Interface4(_interfaces._InputSource):
     :py:func:`rvbd.shark.shark.Shark.get_interfaces` or
     :py:func:`rvbd.shark.shark.Shark.get_interface_by_name`."""
     def __init__(self, shark, data):
-        super(Interface4, self).__init__(shark, data)
+        super(Interface4, self).__init__(shark, data, shark.api.interfaces)
         self.id = self.data.id
 
     def __repr__(self):
-        return '<Interface4 {0} {1}>'.format(self.data.name, self.data.type)
+        return '<{0} {1} {2}>'.format(self.__class__.__name__, self.data.name, self.data.type)
 
     def __str__(self):
         return '{0}'.format(self.data.name)
-
+    
     @property
     def name(self):
         """The interface device name."""
         return self.data.name
-
+    
     @property
     def description(self):
         """The interface description."""
@@ -59,11 +59,18 @@ class Interface4(_interfaces._InputSource):
         interfaces = shark.api.interfaces.get_all()
         return [ cls(shark, data) for data in interfaces ]
 
+    def update(self):
+        """Update current object with the values from the server
+        """
+        data = self._api.get_details(self.id)
+        super(Interface4, self).update(data)
+    
+
 class Clip4(_interfaces.Clip):
     """A trace clip packet source.
     These objects are returned by `Shark.get_clips`."""
     def __init__(self, shark, data):
-        super(Clip4, self).__init__(shark, data)
+        super(Clip4, self).__init__(shark, data, shark.api.clips)
         self.id = self.data.id
 
     def __str__(self):
@@ -74,7 +81,7 @@ class Clip4(_interfaces.Clip):
             self._load()
     
     def _load(self):
-        self.data = self.shark.api.clips.get_details(self.id)
+        self.data = self._api.get_details(self.id)
 
     @property
     def source_path(self):
@@ -103,7 +110,7 @@ class Clip4(_interfaces.Clip):
     def delete(self):
         """Erase the clip from shark
         """
-        self.shark.api.clips.delete(self.id)
+        self._api.delete(self.id)
         self.id = None
 
     @classmethod
@@ -155,7 +162,7 @@ class Clip4(_interfaces.Clip):
         If path is None packets will be exported to a temporary file.
         A file object that contains the packets is returned.
         """
-        return open(self.shark.api.clips.get_packets(self.id, path), 'rb')
+        return open(self._api.get_packets(self.id, path), 'rb')
 
 class Job4(_interfaces.Job):
     """A capture job packet source. These objects are normally not
@@ -164,17 +171,26 @@ class Job4(_interfaces.Job):
     """
 
     def __init__(self, shark, data):
-        super(Job4, self).__init__(shark, data)
+        super(Job4, self).__init__(shark, data, shark.api.jobs)
         self.id = self.data.id
-        self.index_enabled = True
+        self.index_enabled = True 
+        self.data = data
 
-        if not 'config' in self.data:
-            self.data.config = shark.api.jobs.get_config(self.id)
+    def _ensure_loaded(self):
+        if self.data is None or len(self.data) == 1:
+            self._load()
+    
+    def _load(self):
+        self.data = self._api.get_details(self.id)
 
+    @loaded
     def __repr__(self):
-        return '<Job {0} on {1}>'.format(self.data.config.name,
-                                         self.data.config.interface_description)
+        return '<{0} {1} on {2}>'.format(
+            self.__class__.__name__,
+            self.data.config.name,
+            self.data.config.interface_description)
 
+    @loaded
     def __str__(self):
         return '{0}'.format(self.data.config.name)
 
@@ -183,6 +199,7 @@ class Job4(_interfaces.Job):
         return 'jobs/{0}'.format(self.id)
 
     @property
+    @loaded
     def source_options(self):
         if not self.index_enabled:
             return {'disable_index' : True}
@@ -195,17 +212,20 @@ class Job4(_interfaces.Job):
         return False
 
     @property
+    @loaded
     def name(self):
         """The capture job name"""
         return self.data.config.name
 
     @property
+    @loaded
     def size_on_disk(self):
         """The capture job actual size, corresponding to the one shown by the
         Shark UI shows."""
         return self.get_status()['packet_size']
 
     @property
+    @loaded
     def size_limit(self):
         """The capture job maximum size, corresponding to the one shown by the
         Shark UI shows."""
@@ -225,7 +245,7 @@ class Job4(_interfaces.Job):
         source for this job."""
         interfaces = Interface4.get_all(self.shark)
         for interface in interfaces:
-            if self.data.config.interface_name == interface.name:
+            if self.data.config.interface_name == interface.id:
                 return interface
         ValueError('{0} interface not found'.format(self.data.config.interface_description))
 
@@ -351,17 +371,17 @@ class Job4(_interfaces.Job):
     def start(self):
         """Start a job in the Shark appliance
         """
-        self.shark.api.jobs.state_update(self.id, {'state': "RUNNING"})
+        self._api.state_update(self.id, {'state': "RUNNING"})
 
     def stop(self):
         """Stop a job in the Shark appliance
         """
-        self.shark.api.jobs.state_update(self.id, {'state': "STOPPED"})
+        self._api.state_update(self.id, {'state': "STOPPED"})
 
     def clear(self, restart=False):
         """Clear data in the Shark appliance
         """
-        self.shark.api.jobs.state_update(self.id, {'state':'STOPPED', 'clear_packets':True})
+        self._api.state_update(self.id, {'state':'STOPPED', 'clear_packets':True})
         if restart:
             self.start()
 
@@ -372,7 +392,7 @@ class Job4(_interfaces.Job):
             self.stop()
         except:
             pass
-        self.shark.api.jobs.delete(self.id)
+        self._api.delete(self.id)
 
 
     def add_clip(self, filters, description, locked=True):
@@ -401,20 +421,20 @@ class Job4(_interfaces.Job):
         If path is None packets will be exported to a temporary file.
         A file object that contains the packets is returned.
         """
-        return open(self.shark.api.jobs.get_packets(self.id, path), 'rb')
+        return open(self._api.get_packets(self.id, path), 'rb')
         
     def get_state(self):
         """Return the state of the job (e.g. RUNNING, STOPPED)"""
         return self.get_status().state
-
+    
     def get_status(self):
         """Return status information about the capture job."""
-        return self.shark.api.jobs.get_status(self.id)
+        return self._api.get_status(self.id)
 
     def get_stats(self):
         """Return statistics about the capture job."""
-        return self.shark.api.jobs.get_stats(self.id)
+        return self._api.get_stats(self.id)
 
     def get_index_info(self):
         """Return statistics about the capture job index."""
-        return self.shark.api.jobs.get_index(self.id)
+        return self._api.get_index(self.id)

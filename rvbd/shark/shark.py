@@ -22,6 +22,7 @@ from rvbd.shark._connection import SharkConnection
 from rvbd.shark._exceptions import SharkException
 from rvbd.shark._api_helpers import SharkAPIVersions
 from rvbd.shark._api4 import API4_0
+from rvbd.shark._api5 import API5_0
 from rvbd.common.utils import ColumnProxy
 from rvbd.shark._class_mapping import Classesv4, Classes, Classesv5
 
@@ -30,6 +31,7 @@ FILTERS_MAP = {}
 
 API_TABLE = {
     "4.0" : API4_0,
+    "5.0" : API5_0
     }
 
 CLASS_TABLE = {
@@ -530,11 +532,13 @@ class Shark(Service):
 
     def restart(self):
         """Restart the Shark Appliance.
+        This will issue a system reboot.
         """
         self.api.system.restart({'type':'SHARK'})
 
     def restart_probe(self):
         """Restart the Shark probe.
+        This will restart the Pilot server only.
         """
         self.api.system.restart({'type':'PROBE'})
 
@@ -609,3 +613,15 @@ class Shark(Service):
         if case_id:
             config['case_id'] = int(case_id)
         return self.api.system.get_sysdump(path, config)
+    
+    @property
+    def version(self):
+        """Returns the Shark software version
+        """
+        return self.api.common.info().get('sw_version')
+
+    @property
+    def model(self):
+        """Returns the Shark software model
+        """
+        return self.api.common.info().get('model')

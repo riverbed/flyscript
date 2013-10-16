@@ -68,6 +68,9 @@ class Common(API4Group):
 
     def ping(self, as_json=True, timestamp_format=APITimestampFormat.NANOSECOND):
         return self._xjtrans("/ping", "GET", None, as_json, timestamp_format)
+    
+    def info(self):
+        return self._xjtrans("/info", "GET", None, True, APITimestampFormat.NANOSECOND)
 
 class Settings(API4Group):
     def get_basic(self, as_json=True, timestamp_format=APITimestampFormat.NANOSECOND):
@@ -156,11 +159,11 @@ class Settings(API4Group):
 
     def send_test_email(self, config, as_json=True, timestamp_format=APITimestampFormat.NANOSECOND):
         """ Send a test email using the given config"""
-        params = {
-            "test_settings" : True
-            }
-        return self._xjtrans("/settings/notification", "POST", config, as_json, timestamp_format,
-                             params=params)
+        return self._xjtrans("/settings/notification/send_test_mail", "POST", config, as_json, timestamp_format)
+
+    def send_test_trap(self, config, as_json=True, timestamp_format=APITimestampFormat.NANOSECOND):
+        return self._xjtrans('/settings/notification/send_test_trap', "POST", config, as_json, timestamp_format)
+
 
     def get_profiler_export(self, as_json=True, timestamp_format=APITimestampFormat.NANOSECOND):
         """Get the profiler export
@@ -517,7 +520,7 @@ class Files(API4Group):
         return self.shark.conn.download(self.uri_prefix + "/fs/%s/packets" % path, local_path, params=params)
         
 class Users(API4Group):
-    def get_all(self, as_json=True, timestamp_format=APITimestampFormat.NANOSECOND):
+    def get(self, as_json=True, timestamp_format=APITimestampFormat.NANOSECOND):
         """ Lists the users on the system """
         return self._xjtrans("/auth/users" , "GET", None, as_json, timestamp_format)
 
@@ -533,8 +536,12 @@ class Users(API4Group):
         """ Deletes the given user from the system """
         return self._xjtrans("/auth/users/%s" % username, "DELETE", None, True, APITimestampFormat.NANOSECOND)
 
+    def update(self, user, config):
+        """Updates user configuration"""
+        return self._xjtrans('/auth/users/{0}'.format(user), 'PUT', config, True, APITimestampFormat.NANOSECOND)
+
 class Groups(API4Group):
-    def get_all(self, as_json=True, timestamp_format=APITimestampFormat.NANOSECOND):
+    def get(self, as_json=True, timestamp_format=APITimestampFormat.NANOSECOND):
         """ Lists the groups on the system """
         return self._xjtrans("/auth/groups" , "GET", None, as_json, timestamp_format)
 
@@ -550,8 +557,9 @@ class Groups(API4Group):
         """ Deletes the given group from the system """
         return self._xjtrans("/auth/groups/%s" % groupname, "DELETE", None, True, APITimestampFormat.NANOSECOND)
 
+
 class Licenses(API4Group):
-    def get_all(self, as_json=True, timestamp_format=APITimestampFormat.NANOSECOND):
+    def get(self, as_json=True, timestamp_format=APITimestampFormat.NANOSECOND):
         """ Lists all licenses in the system """
         return self._xjtrans("/settings/licenses" , "GET", None, as_json, timestamp_format)
 
@@ -575,10 +583,6 @@ class Licenses(API4Group):
         """ Generate a license request. """
         return self._xjtrans("/settings/licenses/request", "POST", config, as_json, timestamp_format)
 
-class Auth:
-    def __init__(self, uri_prefix, conn):
-        self.users = Users(uri_prefix, conn)
-        self.groups = Groups(uri_prefix, conn)
 
 class Views(API4Group):
     def add(self, config, as_json=True, timestamp_format=APITimestampFormat.NANOSECOND):
@@ -672,9 +676,9 @@ class System(API4Group):
 
 class Certificates(API4Group):
     
-    def get_certificates_config(self, as_json=True, timestamp_format=APITimestampFormat.NANOSECOND):
+    def get(self, as_json=True, timestamp_format=APITimestampFormat.NANOSECOND):
         """ Returns the certificates settings """
-        return self._xjtrans("/system/certificates", "GET", None, as_json, timestamp_format)
+        return self._xjtrans("/settings/certificates", "GET", None, as_json, timestamp_format)
     
     
     def update_profiler_export_certificate(self, certificate_data, as_json=True, timestamp_format=APITimestampFormat.NANOSECOND): 
@@ -700,16 +704,16 @@ class Certificates(API4Group):
         
     def copy_profiler_export_certificate(self, as_json=True, timestamp_format=APITimestampFormat.NANOSECOND): 
         """ Reuses the Profiler Export's certificate as web certificate"""
-        return self._xjtrans("/settings/certificates/web/profiler_export", "POST", None, as_json, timestamp_format)
+        return self._xjtrans("/settings/certificates/web/copy_profiler_export", "POST", None, as_json, timestamp_format)
        
     
     def add_trusted_profiler_certificate(self, certificate_data, as_json=True, timestamp_format=APITimestampFormat.NANOSECOND): 
         """ Add a new Trusted Profiler certificate"""
         return self._xjtrans("/settings/certificates/trusted_profilers", "POST", certificate_data, as_json, timestamp_format)
     
-    def delete_trusted_profiler_certificate(self, certificate_data, as_json=True, timestamp_format=APITimestampFormat.NANOSECOND):
-        """ Delete a new Trusted Profiler certificate"""
-        return self._xjtrans("/settings/certificates/trusted_profilers", "DELETE", certificate_data, as_json, timestamp_format)
+    def delete_trusted_profiler_certificate(self, id, as_json=True, timestamp_format=APITimestampFormat.NANOSECOND):
+        """ Delete a new Trusted Profiler certificate by its id"""
+        return self._xjtrans("/settings/certificates/trusted_profilers/"+id, "DELETE", None, as_json, timestamp_format)
 
 class Stats(API4Group):
     def get_memory(self, as_json=True, timestamp_format=APITimestampFormat.NANOSECOND):
@@ -742,30 +746,81 @@ class Misc(API4Group):
         """
         resp = self.shark.conn.request(self.uri_prefix + "/ping", method, body=data, extra_headers=headers)
         return resp.read()
-    
-class API4_0(API):
+
+
+class Update(API4Group):
+    def get(self):
+        return self._xjtrans('/system/update', 'GET', None, True, APITimestampFormat.NANOSECOND)
+
+    def load_iso_from_url(self, data):
+        """Download upload iso from an url"""
+        return self._xjtrans('/system/update/url', 'POST', data, True, APITimestampFormat.NANOSECOND)
+
+    def upload_iso(self, f):
+        """Given a file descriptor `f`, uploads the content to the server as an upload iso
+        """
+        headers = {'Content-Disposition' : 'update.iso',
+                   'Content-Type' : 'application/octet-stream'}
+        
+        return self.shark.conn.upload(self.uri_prefix + "/system/update/iso", data=f, extra_headers=headers)
+
+    def delete_iso(self, data):
+        """Delete a previously uploaded iso"""
+        return self._xjtrans('/system/update/state', 'PUT', data, True, APITimestampFormat.NANOSECOND)
+
+    def update(self, data):
+        """Perform update of the shark
+
+        `init_id` is the id of the image on the server that is ready for update
+        """
+        return self._xjtrans('/system/update/state', 'PUT',
+                             data,
+                             True, APITimestampFormat.NANOSECOND)
+
+class Storage(API4Group):
+    """Encapsulates the storage informations that can be found in
+    Maintenance page in the webui
+    """
+    def get(self):
+        """Gets the storage configuration from the Server
+        """
+        return self._xjtrans('/system/storage', 'GET', None, True, APITimestampFormat.NANOSECOND)
+
+    def reinitialize(self):
+        """Reinitializes the packet storage
+        """
+        return self._xjtrans('/system/storage/reinitialize', 'POST', None, True, APITimestampFormat.NANOSECOND)
+
+    def format(self, data):
+        """Formats packet storage
+        """
+        return self._xjtrans('/system/format_storage', 'POST', data, True, APITimestampFormat.NANOSECOND )
+
+
+class API4_0(object):
     version = '4.0'
     common_version = '1.0'
     def __init__(self, shark):
         self.shark = shark
-        self.common = Common("/api/common/1.0", self.shark)
-        self.auth = Auth("/api/shark/4.0", self.shark)
-        self.settings = Settings("/api/shark/4.0", self.shark)
-        self.interfaces = Interfaces("/api/shark/4.0", self.shark)
-        self.jobs = Jobs("/api/shark/4.0", self.shark)
-        self.clips = Clips("/api/shark/4.0", self.shark)
-        self.fs = Files("/api/shark/4.0", self.shark)
-        self.licenses = Licenses("/api/shark/4.0", self.shark)
-        self.certificates = Certificates("/api/shark/4.0", self.shark)
-        self.system = System("/api/shark/4.0", self.shark)
-        self.view = Views("/api/shark/4.0", self.shark)
-        self.stats = Stats("/api/shark/4.0", self.shark)
-        self.info = Info('/api/shark/4.0/info', self.shark)
-        self.users = Users('/api/shark/4.0', self.shark)
-        self.groups = Users('/api/shark/4.0', self.shark)
+        self.common = Common("/api/common/"+self.common_version, self.shark)
+        self.settings = Settings("/api/shark/"+self.version, self.shark)
+        self.interfaces = Interfaces("/api/shark/"+self.version, self.shark)
+        self.jobs = Jobs("/api/shark/"+self.version, self.shark)
+        self.clips = Clips("/api/shark/"+self.version, self.shark)
+        self.fs = Files("/api/shark/"+self.version, self.shark)
+        self.licenses = Licenses("/api/shark/"+self.version, self.shark)
+        self.certificates = Certificates("/api/shark/"+self.version, self.shark)
+        self.system = System("/api/shark/"+self.version, self.shark)
+        self.view = Views("/api/shark/"+self.version, self.shark)
+        self.stats = Stats("/api/shark/"+self.version, self.shark)
+        self.info = Info('/api/shark/'+self.version+'/info', self.shark)
+        self.users = Users('/api/shark/'+self.version, self.shark)
+        self.groups = Groups('/api/shark/'+self.version, self.shark)
+        self.update = Update('/api/shark/'+self.version, self.shark)
+        self.storage = Storage('/api/shark/'+self.version, self.shark)
 
         # For the misc handlers just make them methods of the api class itself
-        m = Misc('/api/shark/4.0', self.shark)
+        m = Misc('/api/shark/'+self.version, self.shark)
         self.ping = m.ping
 
 __all__ = ['API4_0']
