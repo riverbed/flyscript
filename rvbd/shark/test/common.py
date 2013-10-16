@@ -15,6 +15,8 @@ from rvbd.shark import viewutils
 
 import rvbd.common.timeutils as T
 
+from testconfig import config
+
 import os
 import sys
 import time
@@ -27,18 +29,6 @@ import datetime
 http_loglevel = 0
 debug_msg_body = 0
 scenario_only = False
-
-try:
-    from testconfig import config
-except ImportError:
-    if __name__ != '__main__':
-        raise
-    config = {}
-
-# XXX we try to use unittest.SkipTest() in setUp() below but it
-# isn't supported by python 2.6.  this simulates the same thing...
-if 'sharkhost' not in config:
-    __test__ = False
 
 
 logger = logging.getLogger(__name__)
@@ -67,31 +57,12 @@ trace_files_dir = os.path.join(HERE, "traces")
 
 
 def create_shark(host):
-    # Get our host and user credentials from testconfig
-    # and create a persistent Shark object for all tests
-    if 'sharkhost' not in config:
-        raise unittest.SkipTest('no shark hostname provided')
 
-    try:
-        username = config['username']
-    except KeyError:
-        username = 'admin'
-    try:
-        password = config['password']
-    except KeyError:
-        password = 'admin'
-
+    username = 'admin'
+    password = 'admin'
     auth = UserAuth(username, password)
-    
-    try:
-        port = config['sharkport']
-    except KeyError:
-        port = None
- 
-    if port:
-        sk = Shark(host, port=port, auth=auth)
-    else:
-        sk = Shark(host, auth=auth)
+    sk = Shark(host, auth=auth)
+
     return sk
 
 
@@ -189,12 +160,7 @@ class SetUpTearDownMixin(object):
     """Used to store the setUp and tearDown function used by
     the test classes"""
     def setUp(self):
-        try:
-            host = self.host
-        except:
-            host = config['sharkhost']
-            if scenario_only:
-                unittest.skip('Running only tests with scenario')
+        host = self.host
         self.shark = create_shark(host)
                 
     def tearDown(self):
