@@ -6,7 +6,7 @@
 # This software is distributed "AS IS" as set forth in the License.
 
 
-from rvbd.shark._api_helpers import APIGroup, APITimestampFormat, API
+from rvbd.shark._api_helpers import APIGroup, APITimestampFormat
 import urllib
 
 class API4Group(APIGroup):

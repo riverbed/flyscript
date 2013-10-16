@@ -304,6 +304,8 @@ class Settings5Specific(EqualityTest, SetUpTearDownMixin, testscenarios.TestWith
         alerts.data['trap']['receivers'].append({'community': 'public',
                             'version': 'V2C',
                             'address': 'trap.test.com'})
+        if saved['mail']['smtp_server_address'] == '':
+            saved['mail']['smtp_server_address'] = 'test@riverbed.com'
         self._equality_test(saved, alerts)
 
         #test snmp
