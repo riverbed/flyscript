@@ -26,6 +26,10 @@ import logging
 import unittest
 import datetime
 
+#these tests are not compatible with nosetests
+if sys.argv[0].find('nosetests') != -1 :
+    raise unittest.SkipTest("These tests are not compatible with nosetest loader since nosetests does not work with testscenarios module: more on the topic https://bugs.launchpad.net/testscenarios/+bug/872887")
+
 http_loglevel = 0
 debug_msg_body = 0
 scenario_only = False
