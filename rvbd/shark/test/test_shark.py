@@ -492,11 +492,13 @@ class SharkTests(SetUpTearDownMixin, testscenarios.TestWithScenarios):
         s = self.shark
         inst = s.get_interfaces()[0]
 
+        def change_name(inst):
+            inst.name = "fyscript test"
+
         if s.api_version.major == 4:
-            with self.assertRaises(AttributeError):
-                inst.name = "flyscript test"
+            self.assertRaises(AttributeError, change_name, inst)
         else:
-            inst.name = "flyscript test"
+            change_name(inst)
             self.assertEqual(inst.name, "flyscript test")
             inst.save()
 

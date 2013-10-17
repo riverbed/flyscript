@@ -275,14 +275,10 @@ class Settings5Specific(EqualityTest, SetUpTearDownMixin, testscenarios.TestWith
     scenarios = config.get('5.0')
 
     def test_4_and_5_compatibility(self):
-        with self.assertRaises(NotImplementedError):
-            self.shark.settings.get_protocol_groups()
-        with self.assertRaises(NotImplementedError):
-            self.shark.settings.update_protocol_groups()
-        with self.assertRaises(NotImplementedError):
-            self.shark.settings.get_protocol_names()
-        with self.assertRaises(NotImplementedError):
-            self.shark.settings.update_protocol_names()
+        self.assertRaises(NotImplementedError, self.shark.settings.get_protocol_groups)
+        self.assertRaises(NotImplementedError, self.shark.settings.update_protocol_groups)
+        self.assertRaises(NotImplementedError, self.shark.settings.get_protocol_names)
+        self.assertRaises(NotImplementedError, self.shark.settings.update_protocol_names)
 
     def test_alerts(self):
         #this test will fail first time in a new shark. why?
@@ -353,16 +349,20 @@ class Settings4Specific(EqualityTest, SetUpTearDownMixin, testscenarios.TestWith
 
     def test_alerts(self):
         """They are not supported for 4.0"""
-        with self.assertRaises(NotImplementedError):
+        def will_raise_ex():
             alerts = self.shark.settings.alerts
             alerts.get()
 
+        self.assertRaises(NotImplementedError, will_raise_ex)
+            
     def test_snmp(self):
         """They are not supported for 4.0"""
-        with self.assertRaises(NotImplementedError):
+        def will_raise_ex():
             x = self.shark.settings.snmp
             x.get()
 
+        self.assertRaises(NotImplementedError, will_raise_ex)
+            
     def test_profiler_export(self):
         profiler_export = self.shark.settings.profiler_export
         saved = profiler_export.get()
