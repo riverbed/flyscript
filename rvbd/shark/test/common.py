@@ -36,13 +36,11 @@ scenario_only = False
 
 
 logger = logging.getLogger(__name__)
-try:
-    loglevel = config['loglevel']
-except KeyError:
-    loglevel = logging.DEBUG
+
+loglevel = config.get('loglevel')
 
 logging.basicConfig(format="%(asctime)s [%(levelname)-5.5s] %(msg)s",
-                    level=loglevel)
+                    level=loglevel or logging.WARNING)
     
 import rvbd.common.connection
 try:
