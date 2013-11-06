@@ -15,7 +15,7 @@ class Job5(s4.Job4):
 
     @dpi_enabled.setter
     def dpi_enabled(self, value):
-        self.data['config']['indexing']['dpi_enabled'] = True
+        self.data['config']['indexing']['dpi_enabled'] = value
 
     def save(self):
         data = self.data['config'].copy()

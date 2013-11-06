@@ -1,13 +1,14 @@
 # Copyright (c) 2013 Riverbed Technology, Inc.
 #
-# This software is licensed under the terms and conditions of the 
+# This software is licensed under the terms and conditions of the
 # MIT License set forth at:
-#   https://github.com/riverbed/flyscript/blob/master/LICENSE ("License").  
+#   https://github.com/riverbed/flyscript/blob/master/LICENSE ("License").
 # This software is distributed "AS IS" as set forth in the License.
 
 from common import *
 import testscenarios
 from functools import partial
+
 
 class EqualityTest(object):
     def _equality_test(self, saved, settings):
@@ -20,7 +21,7 @@ class EqualityTest(object):
 
 class Settings(EqualityTest, SetUpTearDownMixin, testscenarios.TestWithScenarios):
     scenarios = config.get('4.0') + config.get('5.0')
-            
+
     def test_basic(self):
         basic = self.shark.settings.basic
         basic.get()
@@ -41,7 +42,7 @@ class Settings(EqualityTest, SetUpTearDownMixin, testscenarios.TestWithScenarios
         basic.data['timezone']
         basic.data['ntp_config']
         self._equality_test(saved, basic)
-        
+
     def test_auth(self):
         auth = self.shark.settings.auth
         auth.get()
@@ -102,7 +103,7 @@ class Settings(EqualityTest, SetUpTearDownMixin, testscenarios.TestWithScenarios
 
         groups.delete('flyscriptgroup')
         groups.save()
-      
+
     def test_audit(self):
         audit = self.shark.settings.audit
         audit.get()
@@ -132,7 +133,7 @@ class Settings(EqualityTest, SetUpTearDownMixin, testscenarios.TestWithScenarios
         licenses.add(saved[0].key)
         licenses.save()
         self.assertEqual(saved, licenses.get())
-                
+
     def test_firewall(self):
         firewall = self.shark.settings.firewall
         saved = firewall.get()
@@ -141,11 +142,23 @@ class Settings(EqualityTest, SetUpTearDownMixin, testscenarios.TestWithScenarios
             print rule
         #action can be ACCEPT, DROP, LOG_ACCEPT, LOG_DROP
         #protocol can be ALL, TCP, UDP, ICMP
-        firewall.data['rules'].append({'action': 'ACCEPT', 'protocol': 'TCP', 'description': 'flyscript test', 'dest_port': 12345})
-        firewall.data['rules'].append({'action': 'DROP', 'protocol': 'UDP', 'description': 'flyscript test', 'dest_port': 12345})
-        firewall.data['rules'].append({'action': 'LOG_DROP', 'protocol': 'TCP', 'description': 'flyscript test', 'dest_port': 12367})
+        firewall.data['rules'].append({
+                'action': 'ACCEPT',
+                'protocol': 'TCP',
+                'description': 'flyscript test',
+                'dest_port': 12345})
+        firewall.data['rules'].append({
+                'action': 'DROP',
+                'protocol': 'UDP',
+                'description': 'flyscript test',
+                'dest_port': 12345})
+        firewall.data['rules'].append({
+                'action': 'LOG_DROP',
+                'protocol': 'TCP',
+                'description': 'flyscript test',
+                'dest_port': 12367})
         self._equality_test(saved, firewall)
-        
+
     def test_certificates(self):
         certificates = self.shark.settings.certificates
         default_profiler_pem = '''-----BEGIN CERTIFICATE-----
@@ -160,7 +173,9 @@ ehyejGdw6VhXpf4lP9Q8JfVERjCoroVkiXenVQe/zer7Qf2hiDB/5s02/+8uiEeq
 MJpzsSdEYZUSgpyAcws5PDyr2GVFMI3dfPnl28hVavIkR8r05BPDxKbb8Ic6HWpT
 CTDPH3w=
 -----END CERTIFICATE-----'''
-        #generated with: openssl req -newkey rsa:2048 -new -nodes -x509 -days 3650 -keyout key.pem -out cert.pem
+# generated with:
+# openssl req -newkey rsa:2048 -new -nodes -x509 -days 3650 \
+# -keyout key.pem -out cert.pem
         pem_cert = '''-----BEGIN PRIVATE KEY-----
 MIIEvwIBADANBgkqhkiG9w0BAQEFAASCBKkwggSlAgEAAoIBAQDKzwB0jOUITvdn
 x5gHYYeRGvSktYtioWyGTnInZmCfmhhlv1G9tIc5BLdXvy3K5I76437HlVRfahkH
@@ -217,18 +232,19 @@ UvxFJ1fRfr/EH0By7SF/K4COFhhve6M=
         certificates.use_profiler_export_certificate_for_web()
         certificates.use_web_interface_certificate_for_profiler_export()
         certificates.generate_new_certificate_for_web()
-        certificates.generate_new_certificate_for_profiler_export(country='IT',
-                                                                  email="test@test.com",
-                                                                  locality='Italy',
-                                                                  organization='Flyscript',
-                                                                  state="CT",
-                                                                  days=70)
+        certificates.generate_new_certificate_for_profiler_export(
+            country='IT',
+            email="test@test.com",
+            locality='Italy',
+            organization='Flyscript',
+            state="CT",
+            days=70)
         certificates.generate_new_certificate_for_profiler_export()
         certificates.remove_profiler_trusted_certificate('default_profiler')
         certificates.add_profiler_trusted_certificate('default_profiler',
                                                       default_profiler_pem)
         certificates.save()
-    
+
     def test_cors_domain(self):
         cors = self.shark.settings.cors_domain
         saved = cors.get()
@@ -249,7 +265,9 @@ UvxFJ1fRfr/EH0By7SF/K4COFhhve6M=
         #Do not perfom these two because
         #they are really time and bandwidth hungry
         #update.upload_iso(open('./Downloads/update.iso'))
-        # update.load_iso_from_url('http://releng.nbttech.com/cascade_west/catamaran/shark/latest/update.iso')
+        # update.load_iso_from_url(
+        #('http://releng.nbttech.com/cascade_west/'
+        #'catamaran/shark/latest/update.iso'))
 
         # update.save()
 
@@ -297,17 +315,24 @@ class Settings5Specific(EqualityTest, SetUpTearDownMixin, testscenarios.TestWith
         alerts.data['notifier']['enabled'] = True
         #enable SNMP notifications
         alerts.data['notifier']['trap_notification_enabled'] = True
-        alerts.data['trap']['receivers'].append({'community': 'public',
-                            'version': 'V2C',
-                            'address': 'trap.test.com'})
+        alerts.data['trap']['receivers'].append({
+            'community': 'public',
+            'version': 'V2C',
+            'address': 'trap.test.com'})
         if saved['mail']['smtp_server_address'] == '':
             saved['mail']['smtp_server_address'] = 'test@riverbed.com'
         self._equality_test(saved, alerts)
 
         #test snmp
-        alerts.test_snmp({"address":"trap.riverbed.com","community":"public","version":"V2C"})
+        alerts.test_snmp({
+            "address": "trap.riverbed.com",
+            "community": "public",
+            "version": "V2C"})
         #test smtp
-        alerts.test_smtp('notexistentsmtp.riverbed.com', 'nonexistent@riverbed.com', 'flyscript_test@riverbed.com')
+        alerts.test_smtp(
+            'notexistentsmtp.riverbed.com',
+            'nonexistent@riverbed.com',
+            'flyscript_test@riverbed.com')
 
     def test_profiler_export(self):
         profiler_export = self.shark.settings.profiler_export
@@ -317,7 +342,9 @@ class Settings5Specific(EqualityTest, SetUpTearDownMixin, testscenarios.TestWith
             if p.get('address') == 'test.com':
                 profiler_export.data['profilers'].remove(p)
         #add profiler
-        profiler_export.data['profilers'].append({'address':'test.com'})
+        profiler_export.data['profilers'].append({
+            'address': 'test.com'
+            })
         # dpi sync
         profiler_export.sync_dpi_with_profiler('test.com')
         profiler_export.save()
@@ -343,7 +370,7 @@ class Settings5Specific(EqualityTest, SetUpTearDownMixin, testscenarios.TestWith
         snmp.data.location = 'first floor flyscript'
         self._equality_test(saved, snmp)
 
-    
+
 class Settings4Specific(EqualityTest, SetUpTearDownMixin, testscenarios.TestWithScenarios):
     scenarios = config.get('4.0')
 
@@ -354,7 +381,7 @@ class Settings4Specific(EqualityTest, SetUpTearDownMixin, testscenarios.TestWith
             alerts.get()
 
         self.assertRaises(NotImplementedError, will_raise_ex)
-            
+
     def test_snmp(self):
         """They are not supported for 4.0"""
         def will_raise_ex():
@@ -362,7 +389,7 @@ class Settings4Specific(EqualityTest, SetUpTearDownMixin, testscenarios.TestWith
             x.get()
 
         self.assertRaises(NotImplementedError, will_raise_ex)
-            
+
     def test_profiler_export(self):
         profiler_export = self.shark.settings.profiler_export
         saved = profiler_export.get()
@@ -371,7 +398,8 @@ class Settings4Specific(EqualityTest, SetUpTearDownMixin, testscenarios.TestWith
             if p.get('address') == 'test.com':
                 profiler_export.data['profilers'].remove(p)
         #add profiler
-        profiler_export.data['profilers'].append({'address':'test.com'})
+        profiler_export.data['profilers'].append({
+            'address': 'test.com'})
         profiler_export.save()
         #voip_enabled and dpi_enabled for all ports
         for port in profiler_export.data['adapter_ports']:
@@ -379,4 +407,3 @@ class Settings4Specific(EqualityTest, SetUpTearDownMixin, testscenarios.TestWith
         profiler_export.save()
         #test checks
         self._equality_test(saved, profiler_export)
-   

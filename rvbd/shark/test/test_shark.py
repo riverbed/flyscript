@@ -1,16 +1,16 @@
 # Copyright (c) 2013 Riverbed Technology, Inc.
 #
-# This software is licensed under the terms and conditions of the 
+# This software is licensed under the terms and conditions of the
 # MIT License set forth at:
-#   https://github.com/riverbed/flyscript/blob/master/LICENSE ("License").  
+#   https://github.com/riverbed/flyscript/blob/master/LICENSE ("License").
 # This software is distributed "AS IS" as set forth in the License.
 
 from common import *
 
 # this enables scenarios
 #need pip install testscenarios
-# we need scenarios to test over multiple shark (vShark and Shark and maybe Shak+Profiler and
-# Shark+Steelhead
+# we need scenarios to test over multiple shark
+#(vShark and Shark and maybe Shak+Profiler and Shark+Steelhead)
 
 import testscenarios
 
@@ -19,7 +19,8 @@ class SharkTests(SetUpTearDownMixin, testscenarios.TestWithScenarios):
     scenarios = config.get('4.0') + config.get('5.0')
 
     def test_info(self):
-        """ Test server_info, stats, interfaces,  logininfo and protocol/api versions
+        """ Test server_info, stats, interfaces,
+        logininfo and protocol/api versions
         """
         info = self.shark.get_serverinfo()
         self.assertTrue('hostname' in info)
@@ -38,7 +39,8 @@ class SharkTests(SetUpTearDownMixin, testscenarios.TestWithScenarios):
         self.assertTrue('login_banner' in login)
         self.assertTrue('supported_methods' in login)
 
-        self.assertEqual(self.shark.get_protocol_version(), str(self.shark.api_version))
+        self.assertEqual(self.shark.get_protocol_version(),
+                         str(self.shark.api_version))
 
     def test_view_on_interface(self):
         """ Test creating a view on an interface """
@@ -49,7 +51,11 @@ class SharkTests(SetUpTearDownMixin, testscenarios.TestWithScenarios):
         columns, _ = setup_defaults()
         filters = None
 
-        with self.shark.create_view(interface, columns, filters, name='test_view_interface', sync=True) as view:
+        with self.shark.create_view(interface,
+                                    columns,
+                                    filters,
+                                    name='test_view_interface',
+                                    sync=True) as view:
             progress = view.get_progress()
             data = view.get_data()
             ti = view.get_timeinfo()
@@ -57,34 +63,47 @@ class SharkTests(SetUpTearDownMixin, testscenarios.TestWithScenarios):
             #self.assertTrue(ti['start'] > 0)
             #self.assertTrue(len(data) >= 0)
             self.assertTrue(progress == 100)
-            self.assertTrue(view.config['input_source']['path'].startswith('interfaces'))
+            self.assertTrue(
+                view.config['input_source']['path'].startswith('interfaces'))
 
     def test_view_on_job(self):
         """ Test creating a view on a capture job """
         job = setup_capture_job(self.shark)
         columns, filters = setup_defaults()
 
-        with self.shark.create_view(job, columns, None, name='test_view_on_job') as view:
+        with self.shark.create_view(
+                job,
+                columns,
+                None,
+                name='test_view_on_job') as view:
             data = view.get_data()
-
-            self.assertTrue(view.config['input_source']['path'].startswith('jobs'))
+            self.assertTrue(
+                view.config['input_source']['path'].startswith('jobs'))
 
         #testing bug 111168
         #http://bugzilla.nbttech.com/show_bug.cgi?id=111168
 
-        with self.shark.create_view(job, columns, filters, name='bug_111168') as view:
+        with self.shark.create_view(job,
+                                    columns,
+                                    filters,
+                                    name='bug_111168') as view:
             data = view.get_data()
 
-            self.assertTrue(view.config['input_source']['path'].startswith('jobs'))
+            self.assertTrue(
+                view.config['input_source']['path'].startswith('jobs'))
 
-        with self.shark.create_view(job, columns, [TimeFilter.parse_range('last 2 hours')], name='bug_111168_2') as view:
+        with self.shark.create_view(job, columns,
+                                    [TimeFilter.parse_range('last 2 hours')],
+                                    name='bug_111168_2') as view:
             data = view.get_data()
 
-            self.assertTrue(view.config['input_source']['path'].startswith('jobs'))
+            self.assertTrue(
+                view.config['input_source']['path'].startswith('jobs'))
             self.assertEqual(len(view.config['input_source']['filters']), 1)
             filter = view.config['input_source']['filters'][0]
-            self.assertEqual(filter.start+datetime.timedelta(hours=2), filter.end)
-
+            self.assertEqual(
+                filter.start+datetime.timedelta(hours=2),
+                filter.end)
 
     def test_view_on_clip(self):
         """ Test creating a view on a trace clip """
@@ -92,25 +111,34 @@ class SharkTests(SetUpTearDownMixin, testscenarios.TestWithScenarios):
         clip = create_trace_clip(self.shark, job)
         columns, filters = setup_defaults()
 
-        with self.shark.create_view(clip, columns, None, name='test_view_on_clip') as view:
+        with self.shark.create_view(
+                clip,
+                columns,
+                None,
+                name='test_view_on_clip') as view:
             data = view.get_data()
 
             self.assertTrue(len(data) >= 0)
-            self.assertTrue(view.config['input_source']['path'].startswith('clip'))
+            self.assertTrue(
+                view.config['input_source']['path'].startswith('clip'))
 
     def test_view_on_file(self):
         """ Test creating a view on a trace file """
         tracefile = create_tracefile(self.shark)
         columns, filters = setup_defaults()
 
-        with self.shark.create_view(tracefile, columns, None, name='test_view_on_file') as view:
+        with self.shark.create_view(
+                tracefile, columns,
+                None,
+                name='test_view_on_file') as view:
             data = view.get_data()
             try:
                 self.assertTrue(len(data) > 0)
             except:
                 # this may fail in low traffic machines
-                pass 
-            self.assertTrue(view.config['input_source']['path'].startswith('fs'))
+                pass
+            self.assertTrue(
+                view.config['input_source']['path'].startswith('fs'))
 
     def test_view_api(self):
         """ Test some basic properties of the view api
@@ -118,7 +146,11 @@ class SharkTests(SetUpTearDownMixin, testscenarios.TestWithScenarios):
         job = setup_capture_job(self.shark)
         clip = create_trace_clip(self.shark, job)
         columns, filters = setup_defaults()
-        with self.shark.create_view(clip, columns, filters, name='test_view_on_api') as v:
+        with self.shark.create_view(
+                clip,
+                columns,
+                filters,
+                name='test_view_on_api') as v:
             legend = v.get_legend()
             for col in legend:
                 # make sure we have name and description attributes
@@ -135,7 +167,6 @@ class SharkTests(SetUpTearDownMixin, testscenarios.TestWithScenarios):
             if len(rows) == 0:
                 logger.warn('no data in view, cannot test aggregated get')
             self.assertTrue(len(rows) == 0 or len(rows) == 1)
-
 
     def test_create_view_from_template(self):
         job = setup_capture_job(self.shark)
@@ -228,12 +259,15 @@ class SharkTests(SetUpTearDownMixin, testscenarios.TestWithScenarios):
 
         # File Upload
         trace_files_dir = os.path.join(HERE, "traces")
-        file1_ref = test_dir_ref.upload_trace_file("2-router1-in.pcap",
-                                                   os.path.join(trace_files_dir, "2-router1-in.pcap"))
-        file2_ref = test_dir_ref.upload_trace_file("4-router2-in.pcap",
-                                                   os.path.join(trace_files_dir, "4-router2-in.pcap"))
-        file3_ref = self.shark.upload_trace_file("admin/files_test/6-router3-in.pcap",
-                                                 os.path.join(trace_files_dir, "6-router3-in.pcap"))
+        file1_ref = test_dir_ref.upload_trace_file(
+            "2-router1-in.pcap",
+            os.path.join(trace_files_dir, "2-router1-in.pcap"))
+        file2_ref = test_dir_ref.upload_trace_file(
+            "4-router2-in.pcap",
+            os.path.join(trace_files_dir, "4-router2-in.pcap"))
+        file3_ref = self.shark.upload_trace_file(
+            "admin/files_test/6-router3-in.pcap",
+            os.path.join(trace_files_dir, "6-router3-in.pcap"))
 
         #File Download
         download_dir = trace_files_dir + "fs_sandbox_test_dir"
@@ -250,13 +284,13 @@ class SharkTests(SetUpTearDownMixin, testscenarios.TestWithScenarios):
             os.path.join(download_dir, "2-router1-in.pcap"))
         logger.debug("File1 upload success: " + str(file1_upload_success))
         assert file1_upload_success
-            
+
         file2_upload_success = filecmp.cmp(
             os.path.join(trace_files_dir, "4-router2-in.pcap"),
             os.path.join(download_dir, "4-router2-in.pcap"))
         logger.debug("File2 upload success: " + str(file2_upload_success))
         assert file2_upload_success
-            
+
         file3_upload_success = filecmp.cmp(
             os.path.join(trace_files_dir, "6-router3-in.pcap"),
             os.path.join(download_dir, "6-router3-in.pcap"))
@@ -288,7 +322,8 @@ class SharkTests(SetUpTearDownMixin, testscenarios.TestWithScenarios):
         file1_ref.default_file = True
         file2_ref.timeskew_val = 10000
         linked_files_list = [file1_ref, file2_ref, file3_ref]
-        multisegment_ref = self.shark.create_multisegment_file("admin/files_test/multisegment.pvt", linked_files_list)
+        multisegment_ref = self.shark.create_multisegment_file(
+            "admin/files_test/multisegment.pvt", linked_files_list)
         print_details(multisegment_ref)
 
         # Timeskew calculation
@@ -309,30 +344,32 @@ class SharkTests(SetUpTearDownMixin, testscenarios.TestWithScenarios):
 
         # Merged files
         linked_files_list2 = [file1_ref, file2_ref]
-        merged_ref = self.shark.create_merged_file("admin/files_test/merged.pvt", linked_files_list2)
+        merged_ref = self.shark.create_merged_file(
+            "admin/files_test/merged.pvt",
+            linked_files_list2)
         merged_ref.remove()
 
         # Common and miscellaneous calls
         file1_ref.move("/admin/files_test/router1-in.pcap")
         file2_ref.move("/admin/files_test/router2-in.pcap")
         file3_ref.move("/admin/files_test/router3-in.pcap")
-        
+
         dirs, files = test_dir_ref.list()
         for current_file in files:
             print_details(current_file)
-                
-        logger.debug("- " + file1_ref.path + " checksum data")
+
+            logger.debug("- " + file1_ref.path + " checksum data")
         logger.debug(str(file1_ref.checksum()))
-            
+
         # Get File directly without using the directory ref
         file_ref = self.shark.get_file("/admin/files_test/router1-in.pcap")
         logger.debug("- " + file_ref.path + " checksum data")
         logger.debug(file_ref.checksum())
-            
+
         file1_ref.remove()
         file2_ref.remove()
         file3_ref.remove()
-            
+
         logger.debug("- Content after removing the files")
         dirs, files = test_dir_ref.list()
         for current_file in files:
@@ -347,20 +384,33 @@ class SharkTests(SetUpTearDownMixin, testscenarios.TestWithScenarios):
         except:
             interface = self.shark.get_interfaces()[0]
         try:
-            job = self.shark.get_capture_job_by_name('test_shark_interface_job')
+            job = self.shark.get_capture_job_by_name(
+                'test_shark_interface_job')
             job.delete()
         except ValueError:
-            #everything is allright, we can create the test_shark_interface_job job
+            #everything is allright,
+            #we can create the test_shark_interface_job job
             pass
-        job = self.shark.create_job(interface, 'test_shark_interface_job', '300M')
+        job = self.shark.create_job(
+            interface,
+            'test_shark_interface_job',
+            '300M')
         filters = [TimeFilter.parse_range('last 10 minutes')]
-        with self.shark.create_clip(job, filters, 'test_shark_interface_clip') as clip:
+        with self.shark.create_clip(
+                job,
+                filters,
+                'test_shark_interface_clip') as clip:
             self.shark.get_capture_jobs()
             self.shark.get_clips()
-            self.assertNotEqual(self.shark.get_capture_job_by_name('test_shark_interface_job'), None)
-            self.assertNotEqual(self.shark.get_trace_clip_by_description('test_shark_interface_clip'), None)
+            self.assertNotEqual(
+                self.shark.get_capture_job_by_name(
+                    'test_shark_interface_job'), None)
+            self.assertNotEqual(
+                self.shark.get_trace_clip_by_description(
+                    'test_shark_interface_clip'), None)
             try:
-                self.assertNotEqual(self.shark.get_file('/admin/noon.cap'), None)
+                self.assertNotEqual(
+                    self.shark.get_file('/admin/noon.cap'), None)
             except RvbdHTTPException as e:
                 if e.status != 404:
                     raise
@@ -368,7 +418,7 @@ class SharkTests(SetUpTearDownMixin, testscenarios.TestWithScenarios):
             self.assertNotEqual(self.shark.get_dir('/admin/'), None)
 
         job.delete()
-        
+
     def test_create_job_parameters(self):
         try:
             interface = self.shark.get_interface_by_name('mon0')
@@ -377,15 +427,19 @@ class SharkTests(SetUpTearDownMixin, testscenarios.TestWithScenarios):
 
         stats = self.shark.get_stats()
         packet_total_size = stats['storage']['packet_storage'].total
-        index_total_size = stats['storage']['os_storage']['index_storage'].total
+        index_total_size = stats['storage']\
+            ['os_storage']['index_storage'].total
         try:
-            job = self.shark.get_capture_job_by_name('test_create_job_with_parameters')
+            job = self.shark.get_capture_job_by_name(
+                'test_create_job_with_parameters')
             if job:
                 job.delete()
         except (ValueError, RvbdHTTPException):
             pass
-        job = self.shark.create_job(interface, 'test_create_job_with_parameters', '20%', indexing_size_limit='1.7GB',
-                                    start_immediately=True)
+        job = self.shark.create_job(
+            interface, 'test_create_job_with_parameters',
+            '20%', indexing_size_limit='1.7GB',
+            start_immediately=True)
         self.assertEqual(job.size_limit, packet_total_size * 20/100)
         self.assertTrue(job.data.config.indexing.size_limit < 1.7*1024**3)
         self.assertTrue(job.data.config.indexing.size_limit > 1.6*1024**3)
@@ -399,20 +453,26 @@ class SharkTests(SetUpTearDownMixin, testscenarios.TestWithScenarios):
 
         job.delete()
 
-        job = self.shark.create_job(interface, 'test_create_job_with_parameters', '20%', indexing_size_limit='10%',
-                                    packet_retention_time_limit=datetime.timedelta(days=7), start_immediately=True)
+        job = self.shark.create_job(
+            interface, 'test_create_job_with_parameters',
+            '20%', indexing_size_limit='10%',
+            packet_retention_time_limit=datetime.timedelta(days=7),
+            start_immediately=True)
         self.assertEqual(job.size_limit, packet_total_size * 20/100)
-        self.assertTrue(job.data.config.indexing.size_limit < index_total_size * 11/100)
-        self.assertTrue(job.data.config.indexing.size_limit > index_total_size * 9/100)
+        self.assertTrue(
+            job.data.config.indexing.size_limit < index_total_size * 11/100)
+        self.assertTrue(
+            job.data.config.indexing.size_limit > index_total_size * 9/100)
         job.delete()
-        
+
         #test contextual manager
-        with self.shark.create_job(interface, \
-                                       'test_create_job_with_parameters', '20%', \
-                                       indexing_size_limit='1.7GB', \
-                                       start_immediately=True) as job:
+        with self.shark.create_job(interface,
+                                   'test_create_job_with_parameters',
+                                   '20%',
+                                   indexing_size_limit='1.7GB',
+                                   start_immediately=True) as job:
             pass
-        
+
         #TODO: test other job parameters
 
     def test_directory_list(self):
@@ -441,18 +501,20 @@ class SharkTests(SetUpTearDownMixin, testscenarios.TestWithScenarios):
         shark = self.shark
         fltr = (TimeFilter.parse_range("last 30 m"))
         interface = shark.get_interfaces()[0]
-        job = self.shark.create_job(interface, 'test_loaded_decorator', '300MB')
+        job = self.shark.create_job(
+            interface, 'test_loaded_decorator',
+            '300MB')
         with shark.create_clip(job, [fltr], 'test_decorator_clip') as clip:
             #this will test the @loaded decorator
             clip.size
-              
+
     def test_job_export(self):
         shark = self.shark
         interface = shark.get_interfaces()[0]
         # keep this low or you will download too much
-        with self.shark.create_job(interface, \
-                                   'test_job_export', '300MB', \
-                                   indexing_size_limit='30MB', \
+        with self.shark.create_job(interface,
+                                   'test_job_export', '300MB',
+                                   indexing_size_limit='30MB',
                                    start_immediately=True) as job:
             time.sleep(20)
             for x in ['/tmp/test_job_export', '/tmp/trace.pcap']:
@@ -470,7 +532,7 @@ class SharkTests(SetUpTearDownMixin, testscenarios.TestWithScenarios):
             #remove tempdir for f.name
             tempdir = os.path.split(f.name)[0]
             shutil.rmtree(tempdir)
-    
+
     def test_clip_export(self):
         job = self.shark.get_capture_jobs()[0]
         fltr = TimeFilter.parse_range('last 5 minutes')
@@ -503,7 +565,6 @@ class SharkTests(SetUpTearDownMixin, testscenarios.TestWithScenarios):
             inst.save()
 
 
-
 class SharkLiveViewTests(SetUpTearDownMixin, testscenarios.TestWithScenarios):
     scenarios = config.get('4.0') + config.get('5.0')
 
@@ -514,7 +575,8 @@ class SharkLiveViewTests(SetUpTearDownMixin, testscenarios.TestWithScenarios):
     #     clip = create_trace_clip(self.shark, job)
     #     interface = shark.get_interfaces()[0]
     #     columns, filters = setup_defaults()
-    #     with shark.create_view(clip, columns, None, name='test_live_view') as v:
+    #     with shark.create_view(
+    #         clip, columns, None, name='test_live_view') as v:
     #         cursor = viewutils.Cursor(v.all_outputs()[0])
     #         data = cursor.get_data()
     #         time.sleep(3)
@@ -526,7 +588,8 @@ class SharkLiveViewTests(SetUpTearDownMixin, testscenarios.TestWithScenarios):
         s = self.shark
         columns, filters = setup_defaults()
         interface = s.get_interfaces()[0]
-        view = s.create_view(interface, columns, None, name='test_live_view', sync=True)
+        view = s.create_view(
+            interface, columns, None, name='test_live_view', sync=True)
 
         time.sleep(20)
         # 20 seconds delta
@@ -535,13 +598,16 @@ class SharkLiveViewTests(SetUpTearDownMixin, testscenarios.TestWithScenarios):
         end = start + 20*onesec
 
         data = view.get_data(start=start)
-        table = [(x['p'], x['t'], T.datetime_to_nanoseconds(x['t'])) for x in data]
+        table = [(x['p'], x['t'],
+                  T.datetime_to_nanoseconds(x['t'])) for x in data]
 
-        # XXX figure how to split these up into separate tests without adding 20sec delay
+        # XXX figure how to split these up into
+        # separate tests without adding 20sec delay
         #     for each of them
 
-        #this part needs to be redone since delta is no longer accepted for aggregated calls
-         
+        # this part needs to be redone since delta
+        # is no longer accepted for aggregated calls
+
         # aggregate and compare against first row of data
         # print table
         # delta = table[0][2] - start + onesec
