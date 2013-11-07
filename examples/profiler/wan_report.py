@@ -33,6 +33,7 @@ class WANReportApp(ProfilerApp):
                          help='LAN interface address')
         group.add_option('--wan-address', dest='wan_address', default=None,
                          help='WAN interface address')
+        parser.add_option_group(group)
 
         group = optparse.OptionGroup(parser, "Filter Options")
         group.add_option('--timefilter', dest='timefilter', default='last 1 hour',
