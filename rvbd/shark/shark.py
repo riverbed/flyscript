@@ -240,7 +240,8 @@ class Shark(Service):
 
     def create_view(self, src, columns, filters=None,
                     start_time=None, end_time=None,
-                    name=None, charts=None, sync=True):
+                    name=None, charts=None, sync=True,
+                    sampling_time_msec=None):
         """ Create a new view on this Shark.
 
         `src` identifies the source of packets to be analyzed.
@@ -268,7 +269,7 @@ class Shark(Service):
             filterobjs.extend([filt.bind(self) for filt in filters])
 
         view = self.classes.View._create(self, src, columns, filterobjs, name=name,
-                                             sync=sync)
+                                         sync=sync, sampling_time_msec=sampling_time_msec)
         self._add_view(view)
         return view
 

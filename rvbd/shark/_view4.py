@@ -108,7 +108,7 @@ class View4(_interfaces.View):
 
     @classmethod
     def _create(cls, shark, source, columns, filters, sync=True, name=None,
-                cfg_params=None, template=None, charts=None):
+                cfg_params=None, template=None, charts=None, sampling_time_msec=None):
 
         parsed_columns = list()
         for column in columns:
@@ -117,10 +117,15 @@ class View4(_interfaces.View):
             column.description = column.description or xfield.description
             parsed_columns.append(column)
 
+        if sampling_time_msec is None:
+            sampling_time_msec = 1000
+            
         template = {
             'info' : {},
             'processors': [cls._format_columns(parsed_columns)],
-            'parameters': {},
+            'parameters': {
+                'sampling_time_msec' : sampling_time_msec
+            },
             'watches': [],
             'input_source': {
                 'path': source.source_path,
@@ -391,9 +396,10 @@ class Output4(_interfaces.Output):
             return
 
         for sample in samples:
-            if 'vals' not in sample:
+            print "sample: %s" % sample
+            if 'vals' not in sample or sample['p'] == 0:
                 continue
-
+            
             sample['t'] = timeutils.string_to_datetime(sample['t'])
 
             def convert_one(vec):
