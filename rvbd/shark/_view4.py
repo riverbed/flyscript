@@ -396,7 +396,6 @@ class Output4(_interfaces.Output):
             return
 
         for sample in samples:
-            print "sample: %s" % sample
             if 'vals' not in sample or sample['p'] == 0:
                 continue
             
