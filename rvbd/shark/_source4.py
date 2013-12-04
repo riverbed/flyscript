@@ -23,18 +23,20 @@ class Interface4(_interfaces._InputSource):
     :py:func:`rvbd.shark.shark.Shark.get_interface_by_name`."""
     def __init__(self, shark, data):
         super(Interface4, self).__init__(shark, data, shark.api.interfaces)
-        self.id = self.data.id
+        self.id = self.data['id']
 
     def __repr__(self):
-        return '<{0} {1} {2}>'.format(self.__class__.__name__, self.data.name, self.data.type)
+        return '<{0} {1} {2}>'.format(self.__class__.__name__,
+                                      self.data['name'],
+                                      self.data['type'])
 
     def __str__(self):
-        return '{0}'.format(self.data.name)
+        return '{0}'.format(self.data['name'])
     
     @property
     def name(self):
         """The interface device name."""
-        return self.data.name
+        return self.data['name']
     
     @property
     def description(self):
@@ -71,7 +73,7 @@ class Clip4(_interfaces.Clip):
     These objects are returned by `Shark.get_clips`."""
     def __init__(self, shark, data):
         super(Clip4, self).__init__(shark, data, shark.api.clips)
-        self.id = self.data.id
+        self.id = self.data['id']
 
     def __str__(self):
         return 'clips/'+self.id
@@ -172,7 +174,7 @@ class Job4(_interfaces.Job):
 
     def __init__(self, shark, data):
         super(Job4, self).__init__(shark, data, shark.api.jobs)
-        self.id = self.data.id
+        self.id = self.data['id']
         self.index_enabled = True 
         self.data = data
 
@@ -187,8 +189,8 @@ class Job4(_interfaces.Job):
     def __repr__(self):
         return '<{0} {1} on {2}>'.format(
             self.__class__.__name__,
-            self.data.config.name,
-            self.data.config.interface_description)
+            self.name,
+            self.data['config']['interface_description'])
 
     @loaded
     def __str__(self):
@@ -245,7 +247,7 @@ class Job4(_interfaces.Job):
         source for this job."""
         interfaces = Interface4.get_all(self.shark)
         for interface in interfaces:
-            if self.data.config.interface_name == interface.id:
+            if self.data['config']['interface_name'] == interface.id:
                 return interface
         ValueError('{0} interface not found'.format(self.data['config']['interface_description']))
 
@@ -425,7 +427,7 @@ class Job4(_interfaces.Job):
         
     def get_state(self):
         """Return the state of the job (e.g. RUNNING, STOPPED)"""
-        return self.get_status().state
+        return self.get_status()['state']
     
     def get_status(self):
         """Return status information about the capture job."""

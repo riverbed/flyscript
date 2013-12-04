@@ -18,7 +18,6 @@ import traceback
 
 from rvbd.common.api_helpers import APIVersion
 from rvbd.common.service import Service
-from rvbd.shark._connection import SharkConnection
 from rvbd.shark._exceptions import SharkException
 from rvbd.shark._api_helpers import SharkAPIVersions
 from rvbd.shark._api4 import API4_0
@@ -113,15 +112,6 @@ class Shark(Service):
             return '<Shark %s:%d>' % (self.host, self.port)
         else:
             return '<Shark %s>' % (self.host)
-
-    def _get_connection_class(self):
-        """Internal function to return the class
-        used to instantiate a connection"""
-        def conn_wrap(*args, **kwargs):
-            if 'pool_size' not in kwargs:
-                kwargs['pool_size'] = 4
-            return SharkConnection(*args, **kwargs)
-        return conn_wrap
 
     def _get_supported_versions(self):
         try:

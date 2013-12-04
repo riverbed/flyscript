@@ -8,7 +8,7 @@
 from _settings4 import Settings4, getted, BasicSettingsFunctionality, ProfilerExport
 
 #there is no functional need to put this class nested into Settings5 class
-#leaving it as module object to simplify reuse and modularizzation
+#leaving it as module object to simplify reuse and modularization
 
 from functools import partial
 
@@ -77,7 +77,7 @@ class PortDefinitions(DPIResource):
         assert port > 0 and port < 65536
         assert srt == True or srt == False
         if protocol is not 'tcp' and protocol is not 'udp':
-            raise ValueError('Procotol must be tcp or udp')
+            raise ValueError('Protocol must be tcp or udp')
 
         port_obj = self._lookup_port(port)
 
@@ -139,9 +139,9 @@ class GroupDefinitions(DPIResource):
         udp = self._port_string_to_port_list(udp_ports, 'UDP')
     
         self.data.insert(priority, {'name': name,
-                                         'priority': priority,
-                                         'ports': tcp+udp
-                                         })
+                                    'priority': priority,
+                                    'ports': tcp+udp
+                                    })
 
         self._refresh_priorities()
 
@@ -151,7 +151,7 @@ class GroupDefinitions(DPIResource):
         """Remove a port group by name or by priority
 
         It accepts one of name or priority. If name and priority are issued
-        it will remove the rule named `name` only if it maches `priority`
+        it will remove the rule named `name` only if it matches `priority`
 
         `name` is the name of the port group
 
@@ -206,10 +206,10 @@ class L4Mapping(GroupDefinitions):
         udp = self._port_string_to_port_list(udp_ports, 'UDP')
 
         self.data.insert(priority, {'name': name,
-                                         'hosts': [x.strip() for x in hosts.split(',')],
-                                         'priority': priority,
-                                         'ports': tcp+udp
-                                         })
+                                    'hosts': [x.strip() for x in hosts.split(',')],
+                                    'priority': priority,
+                                    'ports': tcp+udp
+                                    })
 
         self._refresh_priorities()
 
@@ -218,7 +218,7 @@ class L4Mapping(GroupDefinitions):
         """Remove a l4 mapping rule
 
         It accepts one of name or priority. If name and priority are issued
-        it will remove the rule named `name` only if it maches `priority`
+        it will remove the rule named `name` only if it matches `priority`
 
         `name` is the name of the l4 mapping
 
@@ -260,24 +260,30 @@ class CustomApplications(DPIResource):
 class ProfilerExport(ProfilerExport):
 
     def _lookup_profiler(self, address):
-        for p in self.data.profilers:
+        for p in self.data['profilers']:
             if p['address'] == address:
                 return p
-        raise ValueError('No profiler with addredss {0} has been found in the configuration'.format(address))
+        msg = ('No profiler with address {0} has been '
+               'found in the configuration'.format(address))
+        raise ValueError(msg)
 
     @getted
     def sync_dpi_with_profiler(self, address):
         p = self._lookup_profiler(address)
-        for prof in self.data.profilers:
+        for prof in self.data['profilers']:
             if 'sync' in prof:
                 del prof['sync']
-        p['sync'] = {"sync_port_names": True,"sync_port_groups": True,"sync_layer4_mappings":True,"sync_custom_applications":True}
+        p['sync'] = {"sync_port_names": True,
+                     "sync_port_groups": True,
+                     "sync_layer4_mappings": True,
+                     "sync_custom_applications": True}
 
     @getted
     def unsync_dpi_with_profiler(self, address):
         p = self._lookup_profiler(address)
         if 'sync' in p:
             del p['sync']
+
 
 class Alerts(BasicSettingsFunctionality):
     def test_snmp(self, obj):
@@ -293,11 +299,20 @@ class Alerts(BasicSettingsFunctionality):
 
         or
 
-        {"address":"trap.riverbed.com","version":"V3","username":"test","engine_id":"testengine","security_level":"AUTH_PRIVACY","authentication":{"protocol":"MD5","passphrase":"testpassword"},"privacy":{"protocol":"DES","passphrase":"testpassword"}}
+        {
+         "address": "trap.riverbed.com",
+         "version": "V3",
+         "username": "test",
+         "engine_id": "testengine",
+         "security_level": "AUTH_PRIVACY",
+         "authentication": {"protocol":"MD5",
+                            "passphrase":"testpassword"},
+         "privacy": {"protocol":"DES",
+                     "passphrase":"testpassword"}
+        }
         """
         return self._api.send_test_snmp(obj)
         
-
     def test_smtp(self, address, to_address, from_address, port=25):
         obj = {
             'smtp_server_address': address,
@@ -307,8 +322,11 @@ class Alerts(BasicSettingsFunctionality):
             }
         return self._api.send_test_smtp(obj)
 
+
 class Settings5(Settings4):
-    '''Interface to various configuration settings on the shark appliance. Version 5.0 API'''    
+    """Interface to various configuration settings on the shark appliance.
+    Version 5.0 API
+    """
 
     def __init__(self, shark):
         super(Settings5, self).__init__(shark)
@@ -321,10 +339,18 @@ class Settings5(Settings4):
         self.alerts = Alerts(shark.api.alerts)
 
         def raise_NotImplementedError(append):
-            raise NotImplementedError('This functionality has been replaced in this version of Shark with the DPI classes. Please refer to the documentation for more informations or look at the instance of ' + append)
+            msg = ("This functionality has been replaced in this version of "
+                   "Shark with the DPI classes. "
+                   "Please refer to the documentation for more information or "
+                   "look at the instance of %s" % append)
+            raise NotImplementedError()
 
         #remove API 4.0 specific
-        self.get_protocol_groups = partial(raise_NotImplementedError, 'Shark.settings.groups_definitions')
-        self.update_protocol_groups = partial(raise_NotImplementedError, 'Shark.settings.groups_definitions')
-        self.get_protocol_names = partial(raise_NotImplementedError, 'Shark.settings.l4_mapping')
-        self.update_protocol_names = partial(raise_NotImplementedError, 'Shark.settings.l4_mapping')
+        self.get_protocol_groups = partial(raise_NotImplementedError,
+                                           'Shark.settings.groups_definitions')
+        self.update_protocol_groups = partial(raise_NotImplementedError,
+                                              'Shark.settings.groups_definitions')
+        self.get_protocol_names = partial(raise_NotImplementedError,
+                                          'Shark.settings.l4_mapping')
+        self.update_protocol_names = partial(raise_NotImplementedError,
+                                             'Shark.settings.l4_mapping')

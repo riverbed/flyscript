@@ -12,23 +12,27 @@ import urllib
 class API5Group(APIGroup):
     base_headers = {}
 
-    def request(self, urlpath, method, data=None, timestamp_format=APITimestampFormat.NANOSECOND, params=None, custom_headers=None):
+    def request(self, urlpath, method, data=None, 
+                timestamp_format=APITimestampFormat.NANOSECOND, 
+                params=None, 
+                custom_headers=None):
         """Issue the given API request using either JSON or XML
         (dictated by the as_json parameter)."""
-        self.add_base_header('X-RBT-High-Precision-Timestamp-Format', timestamp_format)
+        self.add_base_header('X-RBT-High-Precision-Timestamp-Format',
+                             timestamp_format)
         
         # XXXWP Changing the method so that the caller can specify some extra headers
-        headers =  dict(self.base_headers)
+        headers = dict(self.base_headers)
         if isinstance(custom_headers, dict):
             headers.update(custom_headers)
 
-        # we are dealing with a url so let's sanitize it.
-        # this may break code but at least prevents flyscript to send insane urls to the server
+        # we are dealing with a url so let's sanitize it.  this may break code
+        # but at least prevents flyscript to send insane urls to the server
         # define insane: url that contains spaces
         urlpath = urllib.quote(urlpath)
 
-        return self.shark.conn.json_request(self.uri_prefix + urlpath, method=method,
-                                                  data=data, params=params, extra_headers=headers)
+        return self.shark.conn.json_request(method, self.uri_prefix + urlpath,
+                                            data, params, headers)
         
     def add_base_header(self, key, value=""):
         if isinstance(key, basestring):

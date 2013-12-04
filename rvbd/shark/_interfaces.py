@@ -23,14 +23,14 @@ class _InputSource(object):
     def __init__(self, shark, data, api):
         self.shark = shark
         self.id = data['id']
-        self.data = DictObject.create_from_dict(data)
+        self.data = data
         self._api = api
 
     @classmethod
     def get(cls, shark, id, name=None):
         for source in cls.get_all(shark):
-            if id and (source.id == id) or\
-              name and (source.data.config.name == name):
+            if (id and (source.id == id) or
+                    name and (source.data['config']['name'] == name)):
                 return source
         return None
 

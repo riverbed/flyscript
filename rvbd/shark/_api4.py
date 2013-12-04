@@ -13,7 +13,10 @@ class API4Group(APIGroup):
 
     base_headers = {}
 
-    def _xjtrans(self, urlpath, method, data, as_json, timestamp_format=APITimestampFormat.NANOSECOND, params=None, custom_headers=None):
+    def _xjtrans(self, urlpath, method, data, as_json, 
+                 timestamp_format=APITimestampFormat.NANOSECOND,
+                 params=None, 
+                 custom_headers=None):
         """Issue the given API request using either JSON or XML
         (dictated by the as_json parameter)."""
         self.add_base_header('X-RBT-High-Precision-Timestamp-Format', timestamp_format)

@@ -172,7 +172,7 @@ class _FSResource(object):
         """ Creation time timestamp
         """
         creation_time = None
-        if self.data["created"] != None:
+        if self.data["created"] is not None:
             creation_time = datetime.datetime.fromtimestamp(self.data["created"])
         return creation_time
 
@@ -182,7 +182,7 @@ class _FSResource(object):
         """ Modification time timestamp
         """
         modification_time = None
-        if self.data["modified"] != None:
+        if self.data["modified"] is not None:
             modification_time = datetime.datetime.fromtimestamp(self.data["modified"])
 
         return modification_time
@@ -265,7 +265,7 @@ class Directory4(_FSResource):
         #the get_details call has different result on / than on any
         #other directory, so we should take care of it
         res = self.shark.api.fs.get_details(
-            self.data["id"], details = True, recursive = recursive)
+            self.data["id"], details=True, recursive=recursive)
 
         dir_list = []
         file_list = []
@@ -315,10 +315,10 @@ class Directory4(_FSResource):
             
 
         for dir in dirs:
-            sub_data = data_lookup(data, dir.data.id)
+            sub_data = data_lookup(data, dir.data['id'])
             sub_dirs, sub_files = self._process_json_directories(sub_data)
         
-            yield dir.data.id, sub_dirs, sub_files
+            yield dir.data['id'], sub_dirs, sub_files
         
             for x in self._walk(sub_data, sub_dirs):
                 yield x
@@ -358,10 +358,10 @@ class File4(_FSResource, _InputSource):
 
     @property
     def source_path(self):
-        if self.data.id[0] == self.shark._file_separator:
-            return 'fs' + self.data.id
+        if self.data['id'][0] == self.shark._file_separator:
+            return 'fs' + self.data['id']
         else:
-            return 'fs' + self.shark._file_separator + self.data.id
+            return 'fs' + self.shark._file_separator + self.data['id']
 
     @property
     def source_options(self):
@@ -681,8 +681,8 @@ class MultisegmentFile4(_AggregatedFile):
     def delete_timeskew(self):
         """Delete the timeskew computation on the trace file.
         """
-        error_msg = "An error deleting the timeskew calculation" \
-                    "on the multisegment file "
+        error_msg = ("An error deleting the timeskew calculation"
+                     "on the multisegment file ")
         assert self.shark is not None
         assert self.data is not None
 

@@ -107,7 +107,7 @@ class NoBulk(object):
 
     @getted
     def save(self):
-        #this mymics settings behaviour
+        #this mimics settings behaviour
         #for all the resources that do not allow bulk update
         self.get(force=True)
 
@@ -388,16 +388,20 @@ class Update(NoBulk, BasicSettingsFunctionality):
     @getted
     def update(self):
         if self.data['init_id'] is not '': 
-            res = self._api.update({'init_id':self.data.init_id, 'state':'RUNNING'})
+            res = self._api.update({'init_id': self.data['init_id'],
+                                    'state': 'RUNNING'})
         else:
-            raise SystemError('Server does not have any iso image loaded for upload. Upload an iso first and save the configuration to proceed.')
+            msg = ('Server does not have any iso image loaded for upload. '
+                   'Upload an iso first and save the configuration to proceed.')
+            raise SystemError(msg)
 
         while res['state'] == 'RUNNING':
             time.sleep(5)
             res = self.get(force=True)
 
         if res['state'] != 'NEUTRAL':
-            raise SystemError('Server returned error while update: {0}'.format(res['comment']))
+            msg = 'Server returned error while update: %s' % res['comment']
+            raise SystemError(msg)
 
         return res
 

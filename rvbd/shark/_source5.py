@@ -28,17 +28,16 @@ class Job5(s4.Job4):
             pass
         self._api.update(self.id, data)
         if state != "STOPPED":
-            self._api.state_update(self.id, {'state':state})
+            self._api.state_update(self.id, {'state': state})
         
 
 class Interface5(s4.Interface4):    
 
     def save(self):
         if self.shark.model == "vShark":
-            self._api.update(self.id, {
-                    'name': self.data.name,
-                    'description': self.data.description
-                    })
+            self._api.update(self.id, {'name': self.data['name'],
+                                       'description': self.data['description']
+                                      })
         else:
             # we are in a normal shark, we have to
             # delete things we cannot modify
@@ -54,4 +53,4 @@ class Interface5(s4.Interface4):
 
     @s4.Interface4.name.setter
     def name(self, value):
-        self.data.name = value
+        self.data['name'] = value
