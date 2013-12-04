@@ -6,15 +6,15 @@
 # This software is distributed "AS IS" as set forth in the License.
 
 import tempfile
-from common import *
+import common
 import testscenarios
 
-class Dpi(SetUpTearDownMixin, testscenarios.TestWithScenarios):
-    scenarios = config.get('5.0')
+class Dpi(common.SetUpTearDownMixin, testscenarios.TestWithScenarios):
+    scenarios = common.config.get('5.0')
 
     def test_job_dpi(self):
-        job = setup_capture_job(self.shark)
-        columns, filters = setup_defaults()
+        job = common.setup_capture_job(self.shark)
+        columns, filters = common.setup_defaults()
         job.dpi_enabled = True
         job.save()
 
@@ -87,4 +87,3 @@ class Dpi(SetUpTearDownMixin, testscenarios.TestWithScenarios):
             f.seek(0)
             pd.load(f.name)
         self.assertEqual(settings, pd.get(force=True))
-        

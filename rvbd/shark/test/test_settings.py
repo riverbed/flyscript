@@ -5,9 +5,9 @@
 #   https://github.com/riverbed/flyscript/blob/master/LICENSE ("License").
 # This software is distributed "AS IS" as set forth in the License.
 
-from common import *
+import common
 import testscenarios
-from functools import partial
+from rvbd.common.exceptions import RvbdHTTPException
 
 
 class EqualityTest(object):
@@ -19,28 +19,25 @@ class EqualityTest(object):
         self.assertEqual(saved, settings.get())
 
 
-class Settings(EqualityTest, SetUpTearDownMixin, testscenarios.TestWithScenarios):
-    scenarios = config.get('4.0') + config.get('5.0')
+class Settings(EqualityTest,
+               common.SetUpTearDownMixin,
+               testscenarios.TestWithScenarios):
+    scenarios = common.config.get('4.0') + common.config.get('5.0')
 
     def test_basic(self):
+        # let's not mess around with changing most of these settings
+        # in case of a failed test in the middle for some reason
         basic = self.shark.settings.basic
         basic.get()
-        basic.data['hostname'] = 'shark'
+        for attr in ('hostname', 'domain', 'primary_dns', 'secondary_dns',
+                     'ssh_enabled', 'fips_enabled', 'timezone', 'ntp_config',
+                     'mgmt_ports'):
+            self.assertTrue(attr in basic.data)
+
         basic.data['domain'] = 'local'
-        basic.data['primary_dns'] = '127.0.0.1'
-        basic.data['secondary_dns'] = '8.8.8.8'
-        basic.data['ssh_enabled'] = True
-        basic.data['fips_enabled'] = True
         basic.save()
         saved = basic.get()
-        basic.data['hostname'] = 'flyscripttest'
         basic.data['domain'] = 'flyscripttestdomain'
-        basic.data['primary_dns'] = '10.0.0.1'
-        basic.data['secondary_dns'] = '10.0.0.2'
-        basic.data['ssh_enabled'] = True
-        basic.data['fips_enabled'] = False
-        basic.data['timezone']
-        basic.data['ntp_config']
         self._equality_test(saved, basic)
 
     def test_auth(self):
@@ -122,15 +119,13 @@ class Settings(EqualityTest, SetUpTearDownMixin, testscenarios.TestWithScenarios
     def test_licenses(self):
         licenses = self.shark.settings.licenses
         saved = licenses.get()
-        licenses.remove(saved[0].key)
+        self.assertTrue(len(saved) > 0)
         licenses.save()
-        print licenses.status()
-        licenses.add(saved[0].key)
-        licenses.save()
-        self.assertEqual(saved, licenses.get())
-        licenses.clear()
-        licenses.save()
-        licenses.add(saved[0].key)
+        self.assertIsNotNone(licenses.status())
+        with self.assertRaises(RvbdHTTPException):
+            # this will return an "Invalid characters" error
+            fake_key = 'INVALID_KEY'
+            licenses.add(fake_key)
         licenses.save()
         self.assertEqual(saved, licenses.get())
 
@@ -256,25 +251,7 @@ UvxFJ1fRfr/EH0By7SF/K4COFhhve6M=
     def test_update(self):
         update = self.shark.settings.update
         saved = update.get()
-
-        try:
-            update.delete_iso()
-        except:
-            pass
-
-        #Do not perfom these two because
-        #they are really time and bandwidth hungry
-        #update.upload_iso(open('./Downloads/update.iso'))
-        # update.load_iso_from_url(
-        #('http://releng.nbttech.com/cascade_west/'
-        #'catamaran/shark/latest/update.iso'))
-
-        # update.save()
-
-        # update.delete_iso()
-
-        #To perform update
-        #update.update()
+        self.assertIsNotNone(saved)
 
     #disabling this because it requires all jobs to be turned off
     #and will loose all the packets in jobs
@@ -289,8 +266,10 @@ UvxFJ1fRfr/EH0By7SF/K4COFhhve6M=
     #     storage.format()
 
 
-class Settings5Specific(EqualityTest, SetUpTearDownMixin, testscenarios.TestWithScenarios):
-    scenarios = config.get('5.0')
+class Settings5Specific(EqualityTest,
+                        common.SetUpTearDownMixin,
+                        testscenarios.TestWithScenarios):
+    scenarios = common.config.get('5.0')
 
     def test_4_and_5_compatibility(self):
         self.assertRaises(NotImplementedError, self.shark.settings.get_protocol_groups)
@@ -362,17 +341,19 @@ class Settings5Specific(EqualityTest, SetUpTearDownMixin, testscenarios.TestWith
     def test_snmp(self):
         snmp = self.shark.settings.snmp
         saved = snmp.get()
-        snmp.data.description = "flyscript test"
-        snmp.data.enabled = True
-        snmp.data.community = "public"
-        snmp.data.contact = 'flyscript@test.com'
-        snmp.data.version = 'V2C'
-        snmp.data.location = 'first floor flyscript'
+        snmp.data['description'] = "flyscript test"
+        snmp.data['enabled'] = True
+        snmp.data['community'] = "public"
+        snmp.data['contact'] = 'flyscript@test.com'
+        snmp.data['version'] = 'V2C'
+        snmp.data['location'] = 'first floor flyscript'
         self._equality_test(saved, snmp)
 
 
-class Settings4Specific(EqualityTest, SetUpTearDownMixin, testscenarios.TestWithScenarios):
-    scenarios = config.get('4.0')
+class Settings4Specific(EqualityTest,
+                        common.SetUpTearDownMixin,
+                        testscenarios.TestWithScenarios):
+    scenarios = common.config.get('4.0')
 
     def test_alerts(self):
         """They are not supported for 4.0"""

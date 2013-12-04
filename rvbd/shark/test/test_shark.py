@@ -5,22 +5,39 @@
 #   https://github.com/riverbed/flyscript/blob/master/LICENSE ("License").
 # This software is distributed "AS IS" as set forth in the License.
 
-from common import *
 
-# this enables scenarios
-#need pip install testscenarios
-# we need scenarios to test over multiple shark
-#(vShark and Shark and maybe Shak+Profiler and Shark+Steelhead)
+import os
+import time
+import shutil
+import filecmp
+import logging
+import datetime
 
 import testscenarios
+from rvbd.common.exceptions import RvbdHTTPException
+from rvbd.common import timeutils
+
+from rvbd.shark.filters import SharkFilter, TimeFilter
+from rvbd.shark.test.common import (SetUpTearDownMixin, setup_defaults,
+                                    setup_capture_job, create_trace_clip, create_tracefile)
+from testconfig import config
+
+logger = logging.getLogger(__name__)
+
+loglevel = config.get('loglevel')
+logging.basicConfig(format="%(asctime)s [%(levelname)-5.5s] %(msg)s",
+                    level=loglevel or logging.WARNING)
+
+HERE = os.path.abspath(os.path.dirname(__file__))
 
 
-class SharkTests(SetUpTearDownMixin, testscenarios.TestWithScenarios):
+class SharkTests(SetUpTearDownMixin,
+                 testscenarios.TestWithScenarios):
     scenarios = config.get('4.0') + config.get('5.0')
 
     def test_info(self):
-        """ Test server_info, stats, interfaces,
-        logininfo and protocol/api versions
+        """ Test server_info, stats, interfaces, logininfo
+        and protocol/api versions.
         """
         info = self.shark.get_serverinfo()
         self.assertTrue('hostname' in info)
@@ -102,7 +119,7 @@ class SharkTests(SetUpTearDownMixin, testscenarios.TestWithScenarios):
             self.assertEqual(len(view.config['input_source']['filters']), 1)
             filter = view.config['input_source']['filters'][0]
             self.assertEqual(
-                filter.start+datetime.timedelta(hours=2),
+                filter.start + datetime.timedelta(hours=2),
                 filter.end)
 
     def test_view_on_clip(self):
@@ -204,8 +221,7 @@ class SharkTests(SetUpTearDownMixin, testscenarios.TestWithScenarios):
         self.assertNotEqual(str(self.shark.columns.ip.src),  'ip.src')
 
     def test_fs(self):
-        """
-        Tests some commands for creating/removing/moving/listing dirs
+        """ Tests some commands for creating/removing/moving/listing dirs.
         """
         def print_details(resource):
             to_print = ""
@@ -384,22 +400,18 @@ class SharkTests(SetUpTearDownMixin, testscenarios.TestWithScenarios):
         except:
             interface = self.shark.get_interfaces()[0]
         try:
-            job = self.shark.get_capture_job_by_name(
-                'test_shark_interface_job')
+            job = self.shark.get_capture_job_by_name('test_shark_interface_job')
             job.delete()
         except ValueError:
             #everything is allright,
             #we can create the test_shark_interface_job job
             pass
-        job = self.shark.create_job(
-            interface,
-            'test_shark_interface_job',
-            '300M')
+        job = self.shark.create_job(interface,
+                                    'test_shark_interface_job',
+                                    '300M')
         filters = [TimeFilter.parse_range('last 10 minutes')]
-        with self.shark.create_clip(
-                job,
-                filters,
-                'test_shark_interface_clip') as clip:
+        with self.shark.create_clip(job, filters,
+                                    'test_shark_interface_clip') as clip:
             self.shark.get_capture_jobs()
             self.shark.get_clips()
             self.assertNotEqual(
@@ -435,13 +447,14 @@ class SharkTests(SetUpTearDownMixin, testscenarios.TestWithScenarios):
                 job.delete()
         except (ValueError, RvbdHTTPException):
             pass
-        job = self.shark.create_job(
-            interface, 'test_create_job_with_parameters',
-            '20%', indexing_size_limit='1.7GB',
-            start_immediately=True)
+        job = self.shark.create_job(interface,
+                                    'test_create_job_with_parameters',
+                                    '20%',
+                                    indexing_size_limit='1.7GB',
+                                    start_immediately=True)
         self.assertEqual(job.size_limit, packet_total_size * 20/100)
-        self.assertTrue(job.data.config['indexing']['size_limit'] < 1.7*1024**3)
-        self.assertTrue(job.data.config['indexing']['size_limit'] > 1.6*1024**3)
+        self.assertTrue(job.data['config']['indexing']['size_limit'] < 1.7*1024**3)
+        self.assertTrue(job.data['config']['indexing']['size_limit'] > 1.6*1024**3)
         self.assertEqual(job.interface.name, interface.name)
         self.assertEqual(job.get_state(), 'RUNNING')
         # TODO add some equality checks to these
@@ -452,14 +465,16 @@ class SharkTests(SetUpTearDownMixin, testscenarios.TestWithScenarios):
 
         job.delete()
 
-        job = self.shark.create_job(
-            interface, 'test_create_job_with_parameters',
-            '20%', indexing_size_limit='10%',
-            packet_retention_time_limit=datetime.timedelta(days=7),
-            start_immediately=True)
+        timelimit = datetime.timedelta(days=7)
+        job = self.shark.create_job(interface,
+                                    'test_create_job_with_parameters',
+                                    '20%',
+                                    indexing_size_limit='10%',
+                                    packet_retention_time_limit=timelimit,
+                                    start_immediately=True)
         self.assertEqual(job.size_limit, packet_total_size * 20/100)
-        self.assertTrue(job.data.config['indexing']['size_limit'] < index_total_size * 11/100)
-        self.assertTrue(job.data.config['indexing']['size_limit'] > index_total_size * 9/100)
+        self.assertTrue(job.data['config']['indexing']['size_limit'] < index_total_size * 11/100)
+        self.assertTrue(job.data['config']['indexing']['size_limit'] > index_total_size * 9/100)
         job.delete()
 
         #test contextual manager
@@ -483,14 +498,12 @@ class SharkTests(SetUpTearDownMixin, testscenarios.TestWithScenarios):
     def test_directory_walk(self):
         dir = self.shark.get_dir('/admin')
         for root, dirs, files in dir.walk():
-            print root, dirs, files
-            assert isinstance(root, str)
+            #print root, dirs, files
             assert isinstance(dirs, list)
             assert isinstance(files, list)
         dir = self.shark.get_dir('/')
         for root, dirs, files in dir.walk():
-            print root, dirs, files
-            assert isinstance(root, str)
+            #print root, dirs, files
             assert isinstance(dirs, list)
             assert isinstance(files, list)
 
@@ -498,43 +511,41 @@ class SharkTests(SetUpTearDownMixin, testscenarios.TestWithScenarios):
         shark = self.shark
         fltr = (TimeFilter.parse_range("last 30 m"))
         interface = shark.get_interfaces()[0]
-        job = self.shark.create_job(
-            interface, 'test_loaded_decorator',
-            '300MB')
+        job = self.shark.create_job(interface, 'test_loaded_decorator', '300MB')
         with shark.create_clip(job, [fltr], 'test_decorator_clip') as clip:
             #this will test the @loaded decorator
             clip.size
 
-    def test_job_export(self):
-        shark = self.shark
-        interface = shark.get_interfaces()[0]
-        # keep this low or you will download too much
-        with self.shark.create_job(interface,
-                                   'test_job_export', '300MB',
-                                   indexing_size_limit='30MB',
-                                   start_immediately=True) as job:
-            time.sleep(20)
-            for x in ['/tmp/test_job_export', '/tmp/trace.pcap']:
-                try:
-                    os.remove(x)
-                except:
-                    pass
-            job.download('/tmp/test_job_export')
-            job.download('/tmp/')
-            f = job.download()
-            f.close()
-            for x in ['/tmp/test_job_export', '/tmp/trace.pcap']:
-                self.assertTrue(os.path.exists(x))
-                os.remove(x)
-            #remove tempdir for f.name
-            tempdir = os.path.split(f.name)[0]
-            shutil.rmtree(tempdir)
+    #def test_job_export(self):
+    #    shark = self.shark
+    #    interface = shark.get_interfaces()[0]
+    #    # keep this low or you will download too much
+    #    with self.shark.create_job(interface,
+    #                               'test_job_export', '300MB',
+    #                               indexing_size_limit='30MB',
+    #                               start_immediately=True) as job:
+    #        time.sleep(20)
+    #        for x in ['/tmp/test_job_export', '/tmp/trace.pcap']:
+    #            try:
+    #                os.remove(x)
+    #            except:
+    #                pass
+    #        job.download('/tmp/test_job_export')
+    #        job.download('/tmp/')
+    #        f = job.download()
+    #        f.close()
+    #        for x in ['/tmp/test_job_export', '/tmp/trace.pcap']:
+    #            self.assertTrue(os.path.exists(x))
+    #            os.remove(x)
+    #        #remove tempdir for f.name
+    #        tempdir = os.path.split(f.name)[0]
+    #        shutil.rmtree(tempdir)
 
     def test_clip_export(self):
         job = self.shark.get_capture_jobs()[0]
-        fltr = TimeFilter.parse_range('last 5 minutes')
+        fltr = TimeFilter.parse_range('last 1 minute')
         clip = self.shark.create_clip(job, [fltr], 'test_clip')
-        logger.info('created 5 min trace clip for export test')
+        logger.info('created 1 min trace clip for export test')
         f = clip.download()
         f.close()
         self.assertTrue(os.path.exists(f.name))
@@ -596,7 +607,7 @@ class SharkLiveViewTests(SetUpTearDownMixin, testscenarios.TestWithScenarios):
 
         data = view.get_data(start=start)
         table = [(x['p'], x['t'],
-                  T.datetime_to_nanoseconds(x['t'])) for x in data]
+                  timeutils.datetime_to_nanoseconds(x['t'])) for x in data]
 
         # XXX figure how to split these up into
         # separate tests without adding 20sec delay

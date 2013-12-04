@@ -10,25 +10,19 @@ from rvbd.shark import Shark
 from rvbd.shark.types import Operation, Value, Key
 from rvbd.shark.filters import SharkFilter, TimeFilter
 from rvbd.common.service import UserAuth
-from rvbd.common.exceptions import RvbdException, RvbdHTTPException
-from rvbd.shark import viewutils
-
-import rvbd.common.timeutils as T
 
 from testconfig import config
 
 import os
 import sys
 import time
-import shutil
-import filecmp
 import logging
-import unittest
-import datetime
 
 #these tests are not compatible with nosetests
-if sys.argv[0].find('nosetests') != -1 :
-    raise Exception("These tests are not compatible with nosetest loader since nosetests does not work with testscenarios module: more on the topic https://bugs.launchpad.net/testscenarios/+bug/872887")
+if sys.argv[0].find('nosetests') != -1:
+    raise Exception("These tests are not compatible with nosetest loader, "
+                    "nosetests does not support with testscenarios module, "
+                    "for more information: https://bugs.launchpad.net/testscenarios/+bug/872887")
 
 http_loglevel = 0
 debug_msg_body = 0
@@ -38,9 +32,8 @@ scenario_only = False
 logger = logging.getLogger(__name__)
 
 loglevel = config.get('loglevel')
-
 logging.basicConfig(format="%(asctime)s [%(levelname)-5.5s] %(msg)s",
-                    level=loglevel or logging.WARNING)
+                    level=loglevel or logging.DEBUG)
     
 import rvbd.common.connection
 try:
@@ -75,8 +68,8 @@ def setup_defaults():
     columns = [Key('ip.src'),
                Key('ip.dst'),
                Value('generic.packets'),
-                Value('http.duration', Operation.max, description="Max Duration"),
-                Value('http.duration', Operation.avg, description="Avg Duration")]
+               Value('http.duration', Operation.max, description="Max Duration"),
+               Value('http.duration', Operation.avg, description="Avg Duration")]
     # we don't 
     # have generic.application in 5.0 anymore
     filters = [SharkFilter('(tcp.src_port=80) | (tcp.dst_port=80)'),
@@ -88,11 +81,11 @@ def setup_capture_job(shark):
     def create_job():
         interface = shark.get_interfaces()[0]
         if shark.model == 'vShark':
-            job = shark.create_job(interface, 'Flyscript-tests-job', '10%', indexing_size_limit='2GB',
-                               start_immediately=True)
+            job = shark.create_job(interface, 'Flyscript-tests-job', '10%',
+                                   indexing_size_limit='2GB', start_immediately=True)
         else:
-            job = shark.create_job(interface, 'Flyscript-tests-job', '400MB', indexing_size_limit='300MB',
-                               start_immediately=True) 
+            job = shark.create_job(interface, 'Flyscript-tests-job', '400MB',
+                                   indexing_size_limit='300MB', start_immediately=True)
             time.sleep(5)
             job.stop()
         return job
@@ -147,15 +140,15 @@ def cleanup_shark(shark):
     for v in shark.api.view.get_all():
         config = shark.api.view.get_config(v['id'])
         if 'info' in config and config['info']['title'].startswith('test_'):
-            shark.api.view.close(v.id)
+            shark.api.view.close(v['id'])
 
     for j in shark.api.jobs.get_all():
         if j['config']['name'].startswith('test_'):
-            shark.api.jobs.delete(j.id)
+            shark.api.jobs.delete(j['id'])
 
     for c in shark.api.clips.get_all():
         if c['config']['description'].startswith('test_'):
-            shark.api.clips.delete(c.id)
+            shark.api.clips.delete(c['id'])
 
 
 class SetUpTearDownMixin(object):
