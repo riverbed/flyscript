@@ -90,6 +90,9 @@ class Shark(Service):
         except NotImplementedError:
             self.settings = Classes()
 
+        # Get the server info
+        self.serverinfo = self.get_serverinfo()
+            
         self.views = {}
         self._interfaces = None
         self.xtfields = {}
