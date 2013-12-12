@@ -13,6 +13,7 @@ import logging
 from rvbd.common import timeutils
 from rvbd.shark import _interfaces
 from rvbd.shark._class_mapping import path_to_class
+from rvbd.shark._api_helpers import APITimestampFormat
 
 logger = logging.getLogger(__name__)
 
@@ -52,8 +53,7 @@ def _to_native(string, legend_entry):
         return timeutils.nsec_string_to_datetime(string)
     
     if legend_entry.type == 'RELATIVE_TIME':
-        # consider it an integer for now
-        return int(string)
+        return float(string) / denominator
 
     # XXX anything with IPv4 or ETHER?
 
@@ -67,9 +67,10 @@ class View4(_interfaces.View):
         self.handle = handle
         self.source = source
         self._outputs = {}
+        self.timestamp_format = APITimestampFormat.NANOSECOND
 
         if config is None:
-            self.config = shark.api.view.get_config(handle)
+            self.config = shark.api.view.get_config(handle, timestamp_format=self.timestamp_format)
         else:
             self.config = config
 
@@ -86,14 +87,14 @@ class View4(_interfaces.View):
         return '<View ' + ' '.join(['%s="%s"' % (k, d[k]) for k in d.keys()]) + '>'
 
     @classmethod
-    def _create_from_template(cls, shark, source, template, name=None, sync=True):
+    def _create_from_template(cls, shark, source, template, name=None, sync=True, timestamp_format=APITimestampFormat.NANOSECOND):
         #
         # Partial support. Just take the view in JSON format and apply it.
         #
         template_json = json.loads(template)
         #change the source
         template_json['input_source']['path'] = source.source_path
-        res = shark.api.view.add(template_json)
+        res = shark.api.view.add(template_json, timestamp_format=timestamp_format)
         handle = res.get('id')
         view = cls(shark, handle, template_json, source)
         if not source.is_live() and sync:
@@ -108,7 +109,8 @@ class View4(_interfaces.View):
 
     @classmethod
     def _create(cls, shark, source, columns, filters, sync=True, name=None,
-                cfg_params=None, template=None, charts=None, sampling_time_msec=None):
+                cfg_params=None, template=None, charts=None, sampling_time_msec=None,
+                timestamp_format=APITimestampFormat.NANOSECOND):
 
         parsed_columns = list()
         for column in columns:
@@ -139,8 +141,8 @@ class View4(_interfaces.View):
 
         if name is not None:
             template['info']['title'] = name
-            
-        res = shark.api.view.add(template)
+
+        res = shark.api.view.add(template, timestamp_format=timestamp_format)
 
         handle = res.get('id')
 
@@ -167,8 +169,8 @@ class View4(_interfaces.View):
 
 
     @classmethod
-    def _get_all(cls, shark):
-        return [v['id'] for v in shark.api.view.get_all()]
+    def _get_all(cls, shark, timestamp_format=APITimestampFormat.NANOSECOND):
+        return [v['id'] for v in shark.api.view.get_all(timestamp_format=timestamp_format)]
 
     def get_timeinfo(self):
         """ Return a dictionary object with details about the time
@@ -192,7 +194,7 @@ class View4(_interfaces.View):
         # check three times before giving up
         count = 0
         while count < 3:
-            res = self.shark.api.view.get_stats(self.handle)
+            res = self.shark.api.view.get_stats(self.handle, timestamp_format=self.timestamp_format)
             timeinfo = res.get('time_details')
             if timeinfo['start'] and timeinfo['end']:
                 return timeinfo
@@ -203,7 +205,7 @@ class View4(_interfaces.View):
 
     def _poll_completion(self):
         while True:
-            res = self.shark.api.view.get_stats(self.handle)
+            res = self.shark.api.view.get_stats(self.handle, timestamp_format=self.timestamp_format)
             status = res.get('state')
             if status == "DONE":
                 break
@@ -226,7 +228,7 @@ class View4(_interfaces.View):
         False, the view data is still being computed, its progress
         can be followed with the method get_progress().
         """
-        stats = self.shark.api.view.get_stats(self.handle)
+        stats = self.shark.api.view.get_stats(self.handle, timestamp_format=self.timestamp_format)
 
         return stats['state'] == 'DONE'
 
@@ -237,7 +239,7 @@ class View4(_interfaces.View):
         Output data is not available on the view until this value reaches
         100% """
 
-        stats = self.shark.api.view.get_stats(self.handle)
+        stats = self.shark.api.view.get_stats(self.handle, timestamp_format=self.timestamp_format)
         if stats.state == 'DONE' or stats.input_size == 0:
             return 100
         if stats.input_size != 0:
@@ -271,7 +273,31 @@ class Output4(_interfaces.Output):
         * `base`
         * `dimension`
         """
-        return self.view.shark.api.view.get_legend(self.view.handle, self.id)
+        return self.view.shark.api.view.get_legend(self.view.handle, self.id, timestamp_format=self.view.timestamp_format)
+
+    def _get_time_resolution(self):
+        if self.view.timestamp_format == APITimestampFormat.SECOND:
+            return 1
+        elif self.view.timestamp_format == APITimestampFormat.MILLISECOND:
+            return 10**3
+        elif self.view.timestamp_format == APITimestampFormat.MICROSECOND:
+            return 10**6
+        elif self.view.timestamp_format == APITimestampFormat.NANOSECOND:
+            return 10**9
+        else:
+            raise ValueError('invalid time format %s' % str(view.timestamp_format))
+    
+    def _convert_sample_time(self, sample_timestamp):
+        if self.view.timestamp_format == APITimestampFormat.SECOND:
+            return timeutils.sec_string_to_datetime(sample_timestamp)
+        elif self.view.timestamp_format == APITimestampFormat.MILLISECOND:
+            return timeutils.msec_string_to_datetime(sample_timestamp)
+        elif self.view.timestamp_format == APITimestampFormat.MICROSECOND:
+            return timeutils.usec_string_to_datetime(sample_timestamp)
+        elif self.view.timestamp_format == APITimestampFormat.NANOSECOND:
+            return timeutils.nsec_string_to_datetime(sample_timestamp)
+        else:
+            raise ValueError('invalid time format %s' % str(view.timestamp_format))
 
     def _parse_output_params(self, start=None, end=None, delta=None,
                              aggregated=False, sortby=None,
@@ -309,11 +335,11 @@ class Output4(_interfaces.Output):
         if hasattr(delta, 'seconds'):
             # looks like a timedelta
             # total_seconds() would be nice but was added in python 2.7
-            delta = ((delta.days * 24 * 3600) + delta.seconds) * 10**9
+            delta = ((delta.days * 24 * 3600) + delta.seconds) * self._get_time_resolution()
 
         if delta is None:
             #default value = 1s
-            delta = 1000000000
+            delta = self._get_time_resolution()
 
         if start is None:
             start = 0
@@ -385,8 +411,8 @@ class Output4(_interfaces.Output):
         """
         params = self._parse_output_params(start, end, delta, aggregated, sortby, sorttype, fromentry, toentry)
 
-        res = self.view.shark.api.view.get_data(self.view.handle, self.id, **params)
-
+        res = self.view.shark.api.view.get_data(self.view.handle, self.id, timestamp_format=self.view.timestamp_format, **params)
+        
         samples = res.get('samples')
 
         # aggregated debug
@@ -399,7 +425,7 @@ class Output4(_interfaces.Output):
             if 'vals' not in sample or sample['p'] == 0:
                 continue
             
-            sample['t'] = timeutils.string_to_datetime(sample['t'])
+            sample['t'] = self._convert_sample_time(sample['t'])
 
             def convert_one(vec):
                 return [ _to_native(v, self._legend[i])
