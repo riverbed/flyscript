@@ -524,7 +524,7 @@ class Shark(Service):
 
         Return Value: a named tuple with the server parameters
         '''
-        return self.api.system.get_info(self)
+        return self.api.system.get_info()
 
     def get_stats(self):
         '''Get the Shark appliance storage info
