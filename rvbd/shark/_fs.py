@@ -54,7 +54,7 @@ class _FSResource(object):
             # renaming a directory, creating a sub-dir, moving a directory,
             # uploading a trace file). Only Shark can control the root
             # directory
-            if path == self._get_separator():
+            if path == self.shark._file_separator:
                 self.data = self._get_root_details()
             else:
                 self.data = self.shark.api.fs.get_details(path, details=True)
@@ -69,7 +69,7 @@ class _FSResource(object):
         root_dirs = self.shark.api.fs.get_all(details=True, recursive=True)
 
         data = {}
-        data["id"] = self._get_separator()
+        data["id"] = self.shark._file_separator
 
         # It would not make sense setting 0 here since that date would be
         # wrong
@@ -187,13 +187,6 @@ class _FSResource(object):
 
         return modification_time
 
-    def _get_separator(self):
-        # Get the file separator based on the server OS
-        if self.shark.serverinfo.system_type == "Windows":
-            return "\\"
-        else:
-            return "/"
-
 class Directory4(_FSResource):
 
     def __init__(self, shark, path):
@@ -245,7 +238,7 @@ class Directory4(_FSResource):
             }
             shark.api.fs.upload_raw(src_dir, None, headers)
 
-            new_path = src_dir + self._get_separator() + dir_name
+            new_path = src_dir + shark._file_separator + dir_name
             return cls(shark, new_path)
 
         raise SharkException(error_msg + path + \
@@ -258,7 +251,7 @@ class Directory4(_FSResource):
         """
         assert self.shark is not None
 
-        complete_path = self.data["id"] + self._get_separator() + dir_name
+        complete_path = self.data["id"] + self.shark._file_separator + dir_name
         new_dir_ref = Directory4.create(self.shark, complete_path)
         self._update_details(self.data["id"])
         return new_dir_ref
@@ -277,7 +270,7 @@ class Directory4(_FSResource):
         dir_list = []
         file_list = []
 
-        if self.data['id'] == self._get_separator():
+        if self.data['id'] == self.shark._file_separator:
             #we are in the root case, res is thus a list of directories
             for directory in res:
                 dir_list.append(Directory4(self.shark, directory))
@@ -294,7 +287,7 @@ class Directory4(_FSResource):
         """
         assert self.shark is not None
 
-        complete_remote_path = self.data["id"] + self._get_separator() + remote_file_name
+        complete_remote_path = self.data["id"] + self.shark._file_separator + remote_file_name
         return TraceFile4.upload(self.shark, complete_remote_path, local_path)
     
 
@@ -341,7 +334,7 @@ class Directory4(_FSResource):
         dirs = list()
         files = list()
 
-        if self.data['id'] == self._get_separator():
+        if self.data['id'] == self.shark._file_separator:
             for dir in res:
                 dirs.append(Directory4(self.shark, dir))
         else:
@@ -365,10 +358,10 @@ class File4(_FSResource, _InputSource):
 
     @property
     def source_path(self):
-        if self.data.id[0] == self._get_separator():
+        if self.data.id[0] == self.shark._file_separator:
             return 'fs' + self.data.id
         else:
-            return 'fs' + self._get_separator() + self.data.id
+            return 'fs' + self.shark._file_separator + self.data.id
 
     @property
     def source_options(self):
@@ -498,7 +491,7 @@ class _AggregatedFile(File4):
         headers = {'Content-Disposition' : aggr_file_name}
         shark.api.fs.upload_xjobject(aggr_file_dir, json_dict, headers)
 
-        new_path = aggr_file_dir + self._get_separator() + aggr_file_name
+        new_path = aggr_file_dir + shark._file_separator + aggr_file_name
         if type == "MULTISEGMENT_FILE":
 
             return MultisegmentFile4(shark, {'id': new_path})
@@ -518,7 +511,7 @@ class _AggregatedFile(File4):
         dir_name, file_name = os.path.split(self.data["id"])
 
         for linked_file in self.data["linked_sources"]:
-            linked_file_path = dir_name + self._get_separator() + linked_file["path"]
+            linked_file_path = dir_name + self.shark._file_separator + linked_file["path"]
             trace_file_list.append(TraceFile4(self.shark, linked_file_path))
 
         return trace_file_list
@@ -566,7 +559,7 @@ class TraceFile4(File4):
 
         shark.api.fs.upload_raw(file_dir, local_file_ref, headers)
         local_file_ref.close()
-        new_path = file_dir + self._get_separator() + file_name
+        new_path = file_dir + shark._file_separator + file_name
         return TraceFile4(shark, {'id':new_path})
 
     def create_index(self):

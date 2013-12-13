@@ -629,3 +629,11 @@ class Shark(Service):
         """Returns the Shark software model
         """
         return self.api.common.info().get('model')
+    
+    @property
+    def _file_separator(self):
+        # Get the file separator based on the server OS
+        if self.serverinfo.system_type == "Windows":
+            return "\\"
+        else:
+            return "/"
