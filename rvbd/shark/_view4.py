@@ -334,7 +334,6 @@ class Output4(_interfaces.Output):
 
         if hasattr(delta, 'seconds'):
             # looks like a timedelta
-            # total_seconds() would be nice but was added in python 2.7
             delta = ((delta.days * 24 * 3600) + delta.seconds) * self._get_time_resolution()
 
         if delta is None:
