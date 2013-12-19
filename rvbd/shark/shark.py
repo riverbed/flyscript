@@ -623,7 +623,7 @@ class Shark(Service):
     @property
     def _file_separator(self):
         # Get the file separator based on the server OS
-        if self.serverinfo.system_type == "Windows":
+        if self.serverinfo['system_type'] == "Windows":
             return "\\"
         else:
             return "/"
