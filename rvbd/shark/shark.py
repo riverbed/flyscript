@@ -29,19 +29,20 @@ from rvbd.shark._class_mapping import Classesv4, Classes, Classesv5
 FILTERS_MAP = {}
 
 API_TABLE = {
-    "4.0" : API4_0,
-    "5.0" : API5_0
-    }
+    "4.0": API4_0,
+    "5.0": API5_0
+}
 
 CLASS_TABLE = {
     '4.0': Classesv4,
     '5.0': Classesv5
-    }
+}
 
 
 from rvbd.shark.filters import TimeFilter
 
 __all__ = ['Shark']
+
 
 class Shark(Service):
     """The Shark class is the main interface to interact with a Shark Appliance.
@@ -49,7 +50,7 @@ class Shark(Service):
     trace clips, and to query and modify the appliance settings.
     """
     def __init__(self, host, port=None, auth=None,
-                 force_version=None, force_ssl=None):
+                 force_version=None):
         """Establishes a connection to a Shark appliance.
 
         `host` is the name or IP address of the Shark to connect to
@@ -79,8 +80,8 @@ class Shark(Service):
                        [APIVersion(v) for v in SharkAPIVersions.LEGACY]
 
         super(Shark, self).__init__("shark", host, port=port, auth=auth,
-                                    force_ssl=force_ssl, versions=versions)
-        
+                                    versions=versions)
+
         self.api = API_TABLE[str(self.api_version)](self)
         self.classes = CLASS_TABLE[str(self.api_version)]()
         #these module may not be available
@@ -91,7 +92,7 @@ class Shark(Service):
 
         # Get the server info
         self.serverinfo = self.get_serverinfo()
-            
+
         self.views = {}
         self._interfaces = None
         self.xtfields = {}
@@ -121,7 +122,6 @@ class Shark(Service):
             if versions:
                 return versions
         except:
-            import traceback
             traceback.print_exc()
             pass
 
