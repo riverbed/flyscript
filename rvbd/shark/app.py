@@ -18,9 +18,8 @@ class SharkApp(Application):
 
     def parse_args(self):
         super(SharkApp, self).parse_args()
-        
+
         self.shark = rvbd.shark.Shark(self.args[0], port=self.options.port,
-                                      force_ssl=self.options.force_ssl,
                                       auth=self.auth,
                                       force_version=self.options.api_version)
 

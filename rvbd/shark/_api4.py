@@ -9,20 +9,21 @@
 from rvbd.shark._api_helpers import APIGroup, APITimestampFormat
 import urllib
 
+
 class API4Group(APIGroup):
 
     base_headers = {}
 
-    def _xjtrans(self, urlpath, method, data, as_json, 
+    def _xjtrans(self, urlpath, method, data, as_json,
                  timestamp_format=APITimestampFormat.NANOSECOND,
-                 params=None, 
+                 params=None,
                  custom_headers=None):
         """Issue the given API request using either JSON or XML
         (dictated by the as_json parameter)."""
         self.add_base_header('X-RBT-High-Precision-Timestamp-Format', timestamp_format)
-        
+
         # XXXWP Changing the method so that the caller can specify some extra headers
-        headers =  dict(self.base_headers)
+        headers = dict(self.base_headers)
         if isinstance(custom_headers, dict):
             headers.update(custom_headers)
 
@@ -32,12 +33,12 @@ class API4Group(APIGroup):
         urlpath = urllib.quote(urlpath)
 
         if as_json:
-            return self.shark.conn.json_request(method, uri=self.uri_prefix + urlpath,
+            return self.shark.conn.json_request(method, self.uri_prefix + urlpath,
                                                 body=data, params=params, extra_headers=headers)
         else:
-            return self.shark.conn.xml_request(method, uri=self.uri_prefix + urlpath,
-                                                 body=data,
-                                                 params=params, extra_headers=headers)
+            return self.shark.conn.xml_request(method, self.uri_prefix + urlpath,
+                                               body=data,
+                                               params=params, extra_headers=headers)
 
     def add_base_header(self, key, value=""):
         if isinstance(key, basestring):
@@ -46,6 +47,7 @@ class API4Group(APIGroup):
     def remove_base_header(self, key):
         if isinstance(key, basestring):
             self.base_headers.pop(key, None)
+
 
 class Common(API4Group):
     def get_services(self, as_json=True, timestamp_format=APITimestampFormat.NANOSECOND):
