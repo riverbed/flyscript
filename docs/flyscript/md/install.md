@@ -17,6 +17,8 @@ Dependencies
     * Download latest from [here](http://python.org/download/)
 * Python setuptools
     * Download latest from [here](https://pypi.python.org/pypi/setuptools)
+* Python requests library
+    * Download latest from [here](https://pypi.python.org/pypi/requests)
 
 
 <a id="quickstart"></a>
@@ -40,8 +42,8 @@ The latest version of FlyScript can also be downloaded from either
 GitHub or Riverbed's Splash page.  This way the SDK can be installed
 offline for enviroments that may not have ready internet access.
 
-Once the depenencies are downloaded (python and setuptools) grab the SDK from
-one of the following locations:
+Once the depenencies are downloaded and installed (python, setuptools, 
+and requests) grab the SDK from one of the following locations:
 
 #### GitHub
 

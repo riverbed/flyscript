@@ -15,6 +15,8 @@ Dependencies
     * Download latest from [here](http://python.org/download/)
 * Python setuptools
     * Download latest from [here](https://pypi.python.org/pypi/setuptools)
+* Python requests library
+    * Download latest from [here](https://pypi.python.org/pypi/requests)
 
 
 System-Wide Installation 
@@ -53,11 +55,22 @@ Check that Python is installed and running the approriate version:
 
 
 ### Offline Installation
-With no network access, and the flyscript package copied to your system:
+With no network access, and the flyscript and requests packages 
+copied to your system:
 
-1. Extract the FlyScript package in a suitable location.
+1. Extract the requests package in a suitable location.
 
-2. As root or using sudo, install the FlyScript package:
+2. As root or using sudo, install the requests package:
+
+        :::text
+        > cd requests-2.1.0
+        > C:\Python27\python setup.py install
+        ....
+        ....
+
+3. Extract the FlyScript package in a suitable location.
+
+4. As root or using sudo, install the FlyScript package:
 
         :::text
         $ cd flyscript-0.5.2
@@ -100,7 +113,7 @@ If your machine has access to the internet, then follow these steps:
 
 1. If you don't yet have Python installed on your system, download
    Python from [python.org](http://www.python.org/getit/).  Be sure to pick the
-   installer from the Python 2 section (2.7.3 at the time this
+   installer from the Python 2 section (2.7.6 at the time this
    document is written) since FlyScript does not currently support
    Python 3.  Download the installer for your platform (32bit
    vs. 64bit).
@@ -140,14 +153,27 @@ If your machine has access to the internet, then follow these steps:
         ....
 
 ### Offline Installation
-For offline installation, ensure you have downloaded python, setuptools, and
-flyscript ahead of time and follow steps 1 and 2 above.  With python and setuptools
+For offline installation, ensure you have downloaded python, setuptools, requests, 
+and flyscript ahead of time and follow steps 1 and 2 above.  With python and setuptools
 installed install flyscript using the following steps:
 
-1. Double click on the FlyScript package to extract the contents.
+1. Double click on the requests package to extract the contents.
 
-2. Install the FlyScript package using the system python.  Open a
-   command prompt and type the following commands:
+2. Install the requests package using the system python.  Open a
+   command prompt and type the following commands (change the cd command
+   to match the directory requests is extracted into):
+
+        :::text
+        > cd c:\requests-2.1.0
+        > C:\Python27\python setup.py install
+        ....
+        ....
+
+3. Double click on the FlyScript package to extract the contents.
+
+4. Install the FlyScript package using the system python.  Open a
+   command prompt and type the following commands (change the cd command
+   to match the directory FlyScript is extracted into):
 
         :::text
         > cd c:\flyscript-0.5.2
