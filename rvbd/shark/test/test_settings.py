@@ -121,7 +121,7 @@ class Settings(EqualityTest,
         saved = licenses.get()
         self.assertTrue(len(saved) > 0)
         licenses.save()
-        self.assertIsNotNone(licenses.status())
+        self.assertTrue(licenses.status() is not None)
         with self.assertRaises(RvbdHTTPException):
             # this will return an "Invalid characters" error
             fake_key = 'INVALID_KEY'
@@ -251,7 +251,7 @@ UvxFJ1fRfr/EH0By7SF/K4COFhhve6M=
     def test_update(self):
         update = self.shark.settings.update
         saved = update.get()
-        self.assertIsNotNone(saved)
+        self.assertTrue(saved is not None)
 
     #disabling this because it requires all jobs to be turned off
     #and will loose all the packets in jobs
