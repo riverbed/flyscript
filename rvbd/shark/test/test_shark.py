@@ -261,8 +261,8 @@ class SharkTests(SetUpTearDownMixin,
             print_details(current_dir)
 
         if self.shark.exists("admin/bar"):
-            dir_ref = self.shark.get_dir("admin/bar")
-            dir_ref.remove()
+            moveto_dir_ref = self.shark.get_dir("admin/bar")
+            moveto_dir_ref.remove()
 
         sub_dir_ref.move("admin/bar")
         print_details(sub_dir_ref)

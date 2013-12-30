@@ -122,10 +122,12 @@ class Settings(EqualityTest,
         self.assertTrue(len(saved) > 0)
         licenses.save()
         self.assertTrue(licenses.status() is not None)
-        with self.assertRaises(RvbdHTTPException):
-            # this will return an "Invalid characters" error
-            fake_key = 'INVALID_KEY'
-            licenses.add(fake_key)
+
+        # this will return an "Invalid characters" error
+        self.assertRaises(RvbdHTTPException,
+                          licenses.add,
+                          'INVALID_KEY')
+
         licenses.save()
         self.assertEqual(saved, licenses.get())
 
