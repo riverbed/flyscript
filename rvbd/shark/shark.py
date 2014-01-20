@@ -18,6 +18,7 @@ import traceback
 
 from rvbd.common.api_helpers import APIVersion
 from rvbd.common.service import Service
+from rvbd.common.exceptions import RvbdException, RvbdHTTPException
 from rvbd.shark._exceptions import SharkException
 from rvbd.shark._api_helpers import SharkAPIVersions
 from rvbd.shark._api4 import API4_0
@@ -121,13 +122,13 @@ class Shark(Service):
 
             if versions:
                 return versions
-        except:
-            traceback.print_exc()
-            pass
+        except RvbdHTTPException as e:
+            if e.status != 404:
+                raise
 
         # older sharks export the protocol info on /protocol_info, and
         # return a 401 unauthorized for any other unrecognized URLs
-        res = self.conn.request('/protocol_info')
+        res = self.conn.json_request('GET', '/protocol_info')
         if res.status != 200 \
                or res.getheader('content-type') != 'text/xml':
             # any other non-ok status probably means we are
